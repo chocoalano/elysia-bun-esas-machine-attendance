@@ -1,0 +1,780 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "wasm"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model announcements {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id BigInt    @db.UnsignedBigInt
+  user_id    BigInt    @db.UnsignedBigInt
+  title      String    @db.VarChar(255)
+  status     Boolean   @default(true)
+  content    String    @db.LongText
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  companies  companies @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "announcements_company_id_foreign")
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "announcements_user_id_foreign")
+
+  @@index([company_id], map: "announcements_company_id_foreign")
+  @@index([user_id], map: "announcements_user_id_foreign")
+}
+
+model bug_reports {
+  id         BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id BigInt               @db.UnsignedBigInt
+  user_id    BigInt               @db.UnsignedBigInt
+  title      String               @db.VarChar(255)
+  status     Boolean              @default(true)
+  message    String               @db.LongText
+  platform   bug_reports_platform @default(android)
+  image      String               @db.VarChar(255)
+  created_at DateTime?            @db.Timestamp(0)
+  updated_at DateTime?            @db.Timestamp(0)
+  companies  companies            @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "bug_reports_company_id_foreign")
+  users      users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "bug_reports_user_id_foreign")
+
+  @@index([company_id], map: "bug_reports_company_id_foreign")
+  @@index([user_id], map: "bug_reports_user_id_foreign")
+}
+
+model cache {
+  key        String @id @db.VarChar(255)
+  value      String @db.MediumText
+  expiration Int
+}
+
+model cache_locks {
+  key        String @id @db.VarChar(255)
+  owner      String @db.VarChar(255)
+  expiration Int
+}
+
+model companies {
+  id            BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  name          String          @unique(map: "companies_name_unique") @db.VarChar(255)
+  latitude      String          @unique(map: "companies_latitude_unique") @db.VarChar(255)
+  longitude     String          @unique(map: "companies_longitude_unique") @db.VarChar(255)
+  radius        String          @unique(map: "companies_radius_unique") @db.VarChar(255)
+  full_address  String          @unique(map: "companies_full_address_unique") @db.VarChar(255)
+  created_at    DateTime?       @db.Timestamp(0)
+  updated_at    DateTime?       @db.Timestamp(0)
+  announcements announcements[]
+  bug_reports   bug_reports[]
+  departements  departements[]
+  job_levels    job_levels[]
+  job_positions job_positions[]
+  settings      settings[]
+  time_workes   time_workes[]
+  users         users[]
+}
+
+model departements {
+  id            BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id    BigInt          @db.UnsignedBigInt
+  name          String          @db.VarChar(255)
+  created_at    DateTime?       @db.Timestamp(0)
+  updated_at    DateTime?       @db.Timestamp(0)
+  companies     companies       @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "departements_company_id_foreign")
+  job_levels    job_levels[]
+  job_positions job_positions[]
+  qr_presences  qr_presences[]
+  time_workes   time_workes[]
+
+  @@index([company_id], map: "departements_company_id_foreign")
+}
+
+model exports {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  completed_at    DateTime? @db.Timestamp(0)
+  file_disk       String    @db.VarChar(255)
+  file_name       String?   @db.VarChar(255)
+  exporter        String    @db.VarChar(255)
+  processed_rows  Int       @default(0) @db.UnsignedInt
+  total_rows      Int       @db.UnsignedInt
+  successful_rows Int       @default(0) @db.UnsignedInt
+  user_id         BigInt    @db.UnsignedBigInt
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+  users           users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "exports_user_id_foreign")
+
+  @@index([user_id], map: "exports_user_id_foreign")
+}
+
+model failed_import_rows {
+  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  data             Json
+  import_id        BigInt    @db.UnsignedBigInt
+  validation_error String?   @db.Text
+  created_at       DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @db.Timestamp(0)
+  imports          imports   @relation(fields: [import_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "failed_import_rows_import_id_foreign")
+
+  @@index([import_id], map: "failed_import_rows_import_id_foreign")
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model fcm_models {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id      BigInt    @db.UnsignedBigInt
+  device_token String    @db.LongText
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fcm_models_user_id_foreign")
+
+  @@index([user_id], map: "fcm_models_user_id_foreign")
+}
+
+model imports {
+  id                 BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  completed_at       DateTime?            @db.Timestamp(0)
+  file_name          String               @db.VarChar(255)
+  file_path          String               @db.VarChar(255)
+  importer           String               @db.VarChar(255)
+  processed_rows     Int                  @default(0) @db.UnsignedInt
+  total_rows         Int                  @db.UnsignedInt
+  successful_rows    Int                  @default(0) @db.UnsignedInt
+  user_id            BigInt               @db.UnsignedBigInt
+  created_at         DateTime?            @db.Timestamp(0)
+  updated_at         DateTime?            @db.Timestamp(0)
+  failed_import_rows failed_import_rows[]
+  users              users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "imports_user_id_foreign")
+
+  @@index([user_id], map: "imports_user_id_foreign")
+}
+
+model job_batches {
+  id             String  @id @db.VarChar(255)
+  name           String  @db.VarChar(255)
+  total_jobs     Int
+  pending_jobs   Int
+  failed_jobs    Int
+  failed_job_ids String  @db.LongText
+  options        String? @db.MediumText
+  cancelled_at   Int?
+  created_at     Int
+  finished_at    Int?
+}
+
+model job_levels {
+  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id     BigInt       @db.UnsignedBigInt
+  departement_id BigInt       @db.UnsignedBigInt
+  name           String       @db.VarChar(255)
+  created_at     DateTime?    @db.Timestamp(0)
+  updated_at     DateTime?    @db.Timestamp(0)
+  companies      companies    @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "job_levels_company_id_foreign")
+  departements   departements @relation(fields: [departement_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "job_levels_departement_id_foreign")
+
+  @@index([company_id], map: "job_levels_company_id_foreign")
+  @@index([departement_id], map: "job_levels_departement_id_foreign")
+}
+
+model job_positions {
+  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id     BigInt       @db.UnsignedBigInt
+  departement_id BigInt       @db.UnsignedBigInt
+  name           String       @db.VarChar(255)
+  created_at     DateTime?    @db.Timestamp(0)
+  updated_at     DateTime?    @db.Timestamp(0)
+  companies      companies    @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "job_positions_company_id_foreign")
+  departements   departements @relation(fields: [departement_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "job_positions_departement_id_foreign")
+
+  @@index([company_id], map: "job_positions_company_id_foreign")
+  @@index([departement_id], map: "job_positions_departement_id_foreign")
+}
+
+model jobs {
+  id           BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  queue        String @db.VarChar(255)
+  payload      String @db.LongText
+  attempts     Int    @db.UnsignedTinyInt
+  reserved_at  Int?   @db.UnsignedInt
+  available_at Int    @db.UnsignedInt
+  created_at   Int    @db.UnsignedInt
+
+  @@index([queue], map: "jobs_queue_index")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model model_has_permissions {
+  permission_id BigInt      @db.UnsignedBigInt
+  model_type    String      @db.VarChar(255)
+  model_id      BigInt      @db.UnsignedBigInt
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "model_has_permissions_permission_id_foreign")
+
+  @@id([permission_id, model_id, model_type])
+  @@index([model_id, model_type], map: "model_has_permissions_model_id_model_type_index")
+}
+
+model model_has_roles {
+  role_id    BigInt @db.UnsignedBigInt
+  model_type String @db.VarChar(255)
+  model_id   BigInt @db.UnsignedBigInt
+  roles      roles  @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "model_has_roles_role_id_foreign")
+
+  @@id([role_id, model_id, model_type])
+  @@index([model_id, model_type], map: "model_has_roles_model_id_model_type_index")
+}
+
+model notifications {
+  id              String    @id @db.Char(36)
+  type            String    @db.VarChar(255)
+  notifiable_type String    @db.VarChar(255)
+  notifiable_id   BigInt    @db.UnsignedBigInt
+  data            String    @db.Text
+  read_at         DateTime? @db.Timestamp(0)
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+
+  @@index([notifiable_type, notifiable_id], map: "notifications_notifiable_type_notifiable_id_index")
+}
+
+model password_reset_tokens {
+  email      String    @id @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+}
+
+model permissions {
+  id                    BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  name                  String                  @db.VarChar(255)
+  guard_name            String                  @db.VarChar(255)
+  created_at            DateTime?               @db.Timestamp(0)
+  updated_at            DateTime?               @db.Timestamp(0)
+  model_has_permissions model_has_permissions[]
+  role_has_permissions  role_has_permissions[]
+
+  @@unique([name, guard_name], map: "permissions_name_guard_name_unique")
+}
+
+model permit_approves {
+  id           BigInt                       @id @default(autoincrement()) @db.UnsignedBigInt
+  permit_id    BigInt                       @db.UnsignedBigInt
+  user_id      BigInt                       @db.UnsignedBigInt
+  user_type    permit_approves_user_type
+  user_approve permit_approves_user_approve @default(w)
+  notes        String?                      @db.LongText
+  created_at   DateTime?                    @db.Timestamp(0)
+  updated_at   DateTime?                    @db.Timestamp(0)
+  permits      permits                      @relation(fields: [permit_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permit_approves_permit_id_foreign")
+  users        users                        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permit_approves_user_id_foreign")
+
+  @@index([permit_id], map: "permit_approves_permit_id_foreign")
+  @@index([user_id], map: "permit_approves_user_id_foreign")
+}
+
+model permit_types {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  type            String    @unique(map: "permit_types_type_unique") @db.VarChar(100)
+  is_payed        Boolean   @default(true)
+  approve_line    Boolean   @default(true)
+  approve_manager Boolean   @default(true)
+  approve_hr      Boolean   @default(true)
+  with_file       Boolean   @default(true)
+  show_mobile     Boolean   @default(true)
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+  permits         permits[]
+}
+
+model permits {
+  id                        BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  permit_numbers            String                  @unique(map: "permits_permit_numbers_unique") @db.VarChar(100)
+  user_id                   BigInt                  @db.UnsignedBigInt
+  permit_type_id            BigInt                  @db.UnsignedBigInt
+  user_timework_schedule_id BigInt                  @db.UnsignedBigInt
+  timein_adjust             DateTime?               @db.Time(0)
+  timeout_adjust            DateTime?               @db.Time(0)
+  current_shift_id          BigInt?                 @db.UnsignedBigInt
+  adjust_shift_id           BigInt?                 @db.UnsignedBigInt
+  start_date                DateTime?               @db.Date
+  end_date                  DateTime?               @db.Date
+  start_time                DateTime?               @db.Time(0)
+  end_time                  DateTime?               @db.Time(0)
+  notes                     String?                 @db.LongText
+  file                      String                  @db.VarChar(255)
+  created_at                DateTime?               @db.Timestamp(0)
+  updated_at                DateTime?               @db.Timestamp(0)
+  permit_approves           permit_approves[]
+  permit_types              permit_types            @relation(fields: [permit_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permits_permit_type_id_foreign")
+  users                     users                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permits_user_id_foreign")
+  user_timework_schedules   user_timework_schedules @relation(fields: [user_timework_schedule_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permits_user_timework_schedule_id_foreign")
+
+  @@index([permit_type_id], map: "permits_permit_type_id_foreign")
+  @@index([user_id], map: "permits_user_id_foreign")
+  @@index([user_timework_schedule_id], map: "permits_user_timework_schedule_id_foreign")
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp(0)
+  expires_at     DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model qr_presence_transactions {
+  id                 BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  qr_presence_id     BigInt           @db.UnsignedBigInt
+  user_attendance_id BigInt           @db.UnsignedBigInt
+  token              String           @db.VarChar(255)
+  created_at         DateTime?        @db.Timestamp(0)
+  updated_at         DateTime?        @db.Timestamp(0)
+  qr_presences       qr_presences     @relation(fields: [qr_presence_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "qr_presence_transactions_qr_presence_id_foreign")
+  user_attendances   user_attendances @relation(fields: [user_attendance_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "qr_presence_transactions_user_attendance_id_foreign")
+
+  @@index([qr_presence_id], map: "qr_presence_transactions_qr_presence_id_foreign")
+  @@index([user_attendance_id], map: "qr_presence_transactions_user_attendance_id_foreign")
+}
+
+model qr_presences {
+  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  type                     qr_presences_type          @default(in)
+  departement_id           BigInt                     @db.UnsignedBigInt
+  timework_id              BigInt                     @db.UnsignedBigInt
+  token                    String                     @unique(map: "qr_presences_token_unique") @db.VarChar(255)
+  for_presence             DateTime                   @db.DateTime(0)
+  expires_at               DateTime                   @db.Timestamp(0)
+  created_at               DateTime?                  @db.Timestamp(0)
+  updated_at               DateTime?                  @db.Timestamp(0)
+  qr_presence_transactions qr_presence_transactions[]
+  departements             departements               @relation(fields: [departement_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "qr_presences_departement_id_foreign")
+  time_workes              time_workes                @relation(fields: [timework_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "qr_presences_timework_id_foreign")
+
+  @@index([departement_id], map: "qr_presences_departement_id_foreign")
+  @@index([timework_id], map: "qr_presences_timework_id_foreign")
+}
+
+model role_has_permissions {
+  permission_id BigInt      @db.UnsignedBigInt
+  role_id       BigInt      @db.UnsignedBigInt
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_has_permissions_permission_id_foreign")
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_has_permissions_role_id_foreign")
+
+  @@id([permission_id, role_id])
+  @@index([role_id], map: "role_has_permissions_role_id_foreign")
+}
+
+model roles {
+  id                   BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  name                 String                 @db.VarChar(255)
+  guard_name           String                 @db.VarChar(255)
+  created_at           DateTime?              @db.Timestamp(0)
+  updated_at           DateTime?              @db.Timestamp(0)
+  model_has_roles      model_has_roles[]
+  role_has_permissions role_has_permissions[]
+
+  @@unique([name, guard_name], map: "roles_name_guard_name_unique")
+}
+
+model sessions {
+  id            String  @id @db.VarChar(255)
+  user_id       BigInt? @db.UnsignedBigInt
+  ip_address    String? @db.VarChar(45)
+  user_agent    String? @db.Text
+  payload       String  @db.LongText
+  last_activity Int
+
+  @@index([last_activity], map: "sessions_last_activity_index")
+  @@index([user_id], map: "sessions_user_id_index")
+}
+
+model settings {
+  id                           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id                   BigInt    @db.UnsignedBigInt
+  attendance_image_geolocation Boolean   @default(false)
+  attendance_qrcode            Boolean   @default(false)
+  attendance_fingerprint       Boolean   @default(false)
+  created_at                   DateTime? @db.Timestamp(0)
+  updated_at                   DateTime? @db.Timestamp(0)
+  companies                    companies @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "settings_company_id_foreign")
+
+  @@index([company_id], map: "settings_company_id_foreign")
+}
+
+model time_workes {
+  id                      BigInt                    @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id              BigInt                    @db.UnsignedBigInt
+  departemen_id           BigInt                    @db.UnsignedBigInt
+  name                    String                    @db.VarChar(255)
+  in                      DateTime                  @db.Time(0)
+  out                     DateTime                  @db.Time(0)
+  created_at              DateTime?                 @db.Timestamp(0)
+  updated_at              DateTime?                 @db.Timestamp(0)
+  qr_presences            qr_presences[]
+  companies               companies                 @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "time_workes_company_id_foreign")
+  departements            departements              @relation(fields: [departemen_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "time_workes_departemen_id_foreign")
+  user_timework_schedules user_timework_schedules[]
+
+  @@index([company_id], map: "time_workes_company_id_foreign")
+  @@index([departemen_id], map: "time_workes_departemen_id_foreign")
+}
+
+model user_address {
+  id                  BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id             BigInt                     @db.UnsignedBigInt
+  identity_type       user_address_identity_type @default(ktp)
+  identity_numbers    String                     @unique(map: "user_address_identity_numbers_unique") @db.VarChar(100)
+  province            String                     @db.VarChar(100)
+  city                String                     @db.VarChar(100)
+  citizen_address     String                     @db.LongText
+  residential_address String                     @db.LongText
+  created_at          DateTime?                  @db.Timestamp(0)
+  updated_at          DateTime?                  @db.Timestamp(0)
+  users               users                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_address_user_id_foreign")
+
+  @@index([user_id], map: "user_address_user_id_foreign")
+}
+
+model user_attendances {
+  id                        BigInt                      @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id                   BigInt                      @db.UnsignedBigInt
+  user_timework_schedule_id BigInt?                     @db.UnsignedBigInt
+  time_in                   DateTime?                   @db.Time(0)
+  time_out                  DateTime?                   @db.Time(0)
+  type_in                   user_attendances_type_in?   @default(qrcode)
+  type_out                  user_attendances_type_out?  @default(qrcode)
+  lat_in                    String?                     @db.VarChar(100)
+  lat_out                   String?                     @db.VarChar(100)
+  long_in                   String?                     @db.VarChar(100)
+  long_out                  String?                     @db.VarChar(100)
+  image_in                  String?                     @db.VarChar(255)
+  image_out                 String?                     @db.VarChar(255)
+  status_in                 user_attendances_status_in  @default(normal)
+  status_out                user_attendances_status_out @default(normal)
+  created_by                BigInt?                     @db.UnsignedBigInt
+  updated_by                BigInt?                     @db.UnsignedBigInt
+  created_at                DateTime?                   @db.Timestamp(0)
+  updated_at                DateTime?                   @db.Timestamp(0)
+  qr_presence_transactions  qr_presence_transactions[]
+  users                     users                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_attendances_user_id_foreign")
+
+  @@index([user_id], map: "user_attendances_user_id_foreign")
+  @@index([user_timework_schedule_id], map: "user_attendances_user_timework_schedule_id_index")
+}
+
+model user_details {
+  id             BigInt                       @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id        BigInt                       @db.UnsignedBigInt
+  phone          String                       @unique(map: "user_details_phone_unique") @db.VarChar(50)
+  placebirth     String                       @db.VarChar(100)
+  datebirth      DateTime                     @db.Date
+  gender         user_details_gender          @default(m)
+  blood          user_details_blood?
+  marital_status user_details_marital_status?
+  religion       user_details_religion?
+  created_at     DateTime?                    @db.Timestamp(0)
+  updated_at     DateTime?                    @db.Timestamp(0)
+  users          users                        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_details_user_id_foreign")
+
+  @@index([user_id], map: "user_details_user_id_foreign")
+}
+
+model user_employes {
+  id                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id             BigInt    @db.UnsignedBigInt
+  departement_id      BigInt?   @db.UnsignedBigInt
+  job_position_id     BigInt?   @db.UnsignedBigInt
+  job_level_id        BigInt?   @db.UnsignedBigInt
+  approval_line_id    BigInt?   @db.UnsignedBigInt
+  approval_manager_id BigInt?   @db.UnsignedBigInt
+  join_date           DateTime  @db.Date
+  sign_date           DateTime  @db.Date
+  resign_date         DateTime? @db.Date
+  bank_name           String?   @db.VarChar(255)
+  bank_number         String?   @db.VarChar(255)
+  bank_holder         String?   @db.VarChar(255)
+  saldo_cuti          Int?
+  created_at          DateTime? @db.Timestamp(0)
+  updated_at          DateTime? @db.Timestamp(0)
+  users               users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_employes_user_id_foreign")
+
+  @@index([approval_line_id], map: "user_employes_approval_line_id_index")
+  @@index([approval_manager_id], map: "user_employes_approval_manager_id_index")
+  @@index([departement_id], map: "user_employes_departement_id_index")
+  @@index([job_level_id], map: "user_employes_job_level_id_index")
+  @@index([job_position_id], map: "user_employes_job_position_id_index")
+  @@index([user_id], map: "user_employes_user_id_foreign")
+}
+
+model user_families {
+  id             BigInt                        @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id        BigInt                        @db.UnsignedBigInt
+  fullname       String                        @db.VarChar(100)
+  relationship   user_families_relationship    @default(wife)
+  birthdate      DateTime                      @db.Date
+  marital_status user_families_marital_status?
+  job            String                        @db.VarChar(100)
+  created_at     DateTime?                     @db.Timestamp(0)
+  updated_at     DateTime?                     @db.Timestamp(0)
+  users          users                         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_families_user_id_foreign")
+
+  @@index([user_id], map: "user_families_user_id_foreign")
+}
+
+model user_formal_educations {
+  id            BigInt                        @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id       BigInt                        @db.UnsignedBigInt
+  institution   String                        @db.VarChar(100)
+  majors        String                        @db.VarChar(100)
+  score         Decimal                       @default(0.00) @db.Decimal(3, 2)
+  start         Int?                          @db.Year
+  finish        Int?                          @db.Year
+  status        user_formal_educations_status
+  certification Boolean                       @default(true)
+  created_at    DateTime?                     @db.Timestamp(0)
+  updated_at    DateTime?                     @db.Timestamp(0)
+  users         users                         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_formal_educations_user_id_foreign")
+
+  @@index([user_id], map: "user_formal_educations_user_id_foreign")
+}
+
+model user_informal_educations {
+  id            BigInt                          @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id       BigInt                          @db.UnsignedBigInt
+  institution   String                          @db.VarChar(100)
+  start         Int?                            @db.Year
+  finish        Int?                            @db.Year
+  type          user_informal_educations_type   @default(day)
+  duration      Int                             @default(1)
+  status        user_informal_educations_status
+  certification Boolean                         @default(true)
+  created_at    DateTime?                       @db.Timestamp(0)
+  updated_at    DateTime?                       @db.Timestamp(0)
+  users         users                           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_informal_educations_user_id_foreign")
+
+  @@index([user_id], map: "user_informal_educations_user_id_foreign")
+}
+
+model user_salaries {
+  id           BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id      BigInt                     @db.UnsignedBigInt
+  basic_salary Decimal                    @default(0.00) @db.Decimal(20, 2)
+  payment_type user_salaries_payment_type @default(Monthly)
+  created_at   DateTime?                  @db.Timestamp(0)
+  updated_at   DateTime?                  @db.Timestamp(0)
+  users        users                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_salaries_user_id_foreign")
+
+  @@index([user_id], map: "user_salaries_user_id_foreign")
+}
+
+model user_timework_schedules {
+  id           BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id      BigInt      @db.UnsignedBigInt
+  time_work_id BigInt      @db.UnsignedBigInt
+  work_day     DateTime    @db.Date
+  created_at   DateTime?   @db.Timestamp(0)
+  updated_at   DateTime?   @db.Timestamp(0)
+  permits      permits[]
+  time_workes  time_workes @relation(fields: [time_work_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_timework_schedules_time_work_id_foreign")
+  users        users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_timework_schedules_user_id_foreign")
+
+  @@index([time_work_id], map: "user_timework_schedules_time_work_id_foreign")
+  @@index([user_id], map: "user_timework_schedules_user_id_foreign")
+}
+
+model user_work_experiences {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id       BigInt    @db.UnsignedBigInt
+  company_name  String    @db.VarChar(100)
+  start         Int?      @db.Year
+  finish        Int?      @db.Year
+  position      String?   @db.VarChar(100)
+  certification Boolean   @default(true)
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+  users         users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_work_experiences_user_id_foreign")
+
+  @@index([user_id], map: "user_work_experiences_user_id_foreign")
+}
+
+model users {
+  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id               BigInt                     @db.UnsignedBigInt
+  name                     String                     @db.VarChar(255)
+  nip                      String                     @unique(map: "users_nip_unique") @db.VarChar(255)
+  email                    String                     @unique(map: "users_email_unique") @db.VarChar(255)
+  email_verified_at        DateTime?                  @db.Timestamp(0)
+  password                 String                     @db.VarChar(255)
+  avatar                   String?                    @db.VarChar(255)
+  status                   users_status               @default(active)
+  remember_token           String?                    @db.VarChar(100)
+  device_id                String?                    @db.VarChar(255)
+  created_at               DateTime?                  @db.Timestamp(0)
+  updated_at               DateTime?                  @db.Timestamp(0)
+  announcements            announcements[]
+  bug_reports              bug_reports[]
+  exports                  exports[]
+  fcm_models               fcm_models[]
+  imports                  imports[]
+  permit_approves          permit_approves[]
+  permits                  permits[]
+  user_address             user_address[]
+  user_attendances         user_attendances[]
+  user_details             user_details[]
+  user_employes            user_employes[]
+  user_families            user_families[]
+  user_formal_educations   user_formal_educations[]
+  user_informal_educations user_informal_educations[]
+  user_salaries            user_salaries[]
+  user_timework_schedules  user_timework_schedules[]
+  user_work_experiences    user_work_experiences[]
+  companies                companies                  @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "users_company_id_foreign")
+
+  @@index([company_id], map: "users_company_id_foreign")
+}
+
+enum qr_presences_type {
+  in
+  out
+}
+
+enum user_address_identity_type {
+  ktp
+  sim
+  passport
+}
+
+enum permit_approves_user_type {
+  line
+  manager
+  hrga
+  EMPTY_ENUM_VALUE @map("")
+}
+
+enum user_families_relationship {
+  wife
+  husband
+  mother
+  father
+  brother
+  sister
+  child
+}
+
+enum user_salaries_payment_type {
+  Monthly
+  Weekly
+  Daily
+}
+
+enum permit_approves_user_approve {
+  w
+  n
+  y
+}
+
+enum user_attendances_type_in {
+  qrcode
+  face_device      @map("face-device")
+  face_geolocation @map("face-geolocation")
+}
+
+enum user_details_gender {
+  m
+  w
+}
+
+enum user_families_marital_status {
+  single
+  married
+  widow
+  widower
+}
+
+enum user_informal_educations_type {
+  day
+  year
+  month
+}
+
+enum bug_reports_platform {
+  web
+  android
+  ios
+}
+
+enum user_attendances_type_out {
+  qrcode
+  face_device      @map("face-device")
+  face_geolocation @map("face-geolocation")
+}
+
+enum user_details_blood {
+  a
+  b
+  o
+  ab
+}
+
+enum user_details_marital_status {
+  single
+  married
+  widow
+  widower
+}
+
+enum user_formal_educations_status {
+  passed
+  not_passed  @map("not-passed")
+  in_progress @map("in-progress")
+}
+
+enum user_informal_educations_status {
+  passed
+  not_passed  @map("not-passed")
+  in_progress @map("in-progress")
+}
+
+enum user_details_religion {
+  islam
+  protestan
+  khatolik
+  hindu
+  buddha
+  khonghucu
+}
+
+enum users_status {
+  active
+  inactive
+  resign
+}
+
+enum user_attendances_status_in {
+  late
+  unlate
+  normal
+}
+
+enum user_attendances_status_out {
+  late
+  unlate
+  normal
+}
