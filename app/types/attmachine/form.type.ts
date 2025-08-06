@@ -31,8 +31,6 @@ export const FormFaceSubmitPayload = t.Object({
   }),
   image: t.File({ format: 'image/*' }),
   user_id: t.String(),
-  company_id: t.String(),
-  departement_id: t.String(),
 });
 export const FormFaceSubmitDataPayload = t.Object({
   time_id: t.Number(),
