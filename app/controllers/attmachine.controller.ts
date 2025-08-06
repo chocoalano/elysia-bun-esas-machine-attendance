@@ -92,7 +92,7 @@ export const AttmachineController = {
         }
         const fileName = `${user.nip}-${randomNumbersByDatetime()}.jpg`;
         const imageUrl = await uploadToSpace('attendances', file, fileName);
-
+        
         try {
             if (data.type === 'in') {
                 await AttendanceModel.attendance_in(
