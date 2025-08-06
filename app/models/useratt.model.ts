@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 export const AttendanceModel = {
     attendance_in: (
         user_id: number,
-        company_id: number,
+        time_id: number,
         lat: number,
         long: number,
         image_url: string,
@@ -13,16 +13,16 @@ export const AttendanceModel = {
         prisma.$executeRawUnsafe(
             `CALL UpdateAttendanceIn(?, ?, ?, ?, ?, ?)`,
             user_id,
-            company_id,
+            time_id,
             lat,
             long,
             image_url,
-            time
+            time,
         ),
 
     attendance_out: (
         user_id: number,
-        company_id: number,
+        time_id: number,
         lat: number,
         long: number,
         image_url: string,
@@ -31,10 +31,10 @@ export const AttendanceModel = {
         prisma.$executeRawUnsafe(
             `CALL UpdateAttendanceOut(?, ?, ?, ?, ?, ?)`,
             user_id,
-            company_id,
+            time_id,
             lat,
             long,
             image_url,
-            time
+            time,
         ),
 };

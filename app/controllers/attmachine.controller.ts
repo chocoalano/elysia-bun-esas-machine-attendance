@@ -97,7 +97,7 @@ export const AttmachineController = {
             if (data.type === 'in') {
                 await AttendanceModel.attendance_in(
                     Number(data.user_id),
-                    Number(user.company_id),
+                    Number(data.time_id),
                     Number(data.lat),
                     Number(data.long),
                     imageUrl,
@@ -106,7 +106,7 @@ export const AttmachineController = {
             } else {
                 await AttendanceModel.attendance_out(
                     Number(data.user_id),
-                    Number(user.company_id),
+                    Number(data.time_id),
                     Number(data.lat),
                     Number(data.long),
                     imageUrl,
