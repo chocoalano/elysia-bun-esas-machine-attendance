@@ -1,5 +1,5 @@
 // import moment, { now } from 'moment'
-import moment, { now } from "moment-timezone";
+import moment, { now, type Moment } from "moment-timezone";
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "./s3";
 
@@ -10,12 +10,14 @@ export function randomNumbersByDatetime(): string {
     return moment(now()).format('YYYYMMDDHHmmss')
 }
 
-export function formatDateNow(): string {
-    return moment(now()).format('YYYY-MM-DD HH:mm:ss')
+export function formatDateNow(): Date {
+    return moment().toDate();
 }
-export function timeAfterNow(detik: number): string {
-    return moment(now()).add(detik, "seconds").format("YYYY-MM-DD HH:mm:ss")
+
+export function timeAfterNow(seconds: number): Date {
+    return moment().add(seconds, "seconds").toDate();
 }
+
 export function formatDate(date: Date): string {
     return moment(date).format('YYYY-MM-DD HH:mm:ss')
 }
