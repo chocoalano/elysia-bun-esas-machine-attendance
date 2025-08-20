@@ -1,13 +1,21 @@
-import moment, { now } from 'moment'
+// import moment, { now } from 'moment'
+import moment, { now } from "moment-timezone";
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "./s3";
 
 moment.locale('id') // optional: set default locale ke Indonesia
+moment.tz.setDefault(process.env.TIMEZONE)
 
 export function randomNumbersByDatetime(): string {
     return moment(now()).format('YYYYMMDDHHmmss')
 }
 
+export function formatDateNow(): string {
+    return moment(now()).format('YYYY-MM-DD HH:mm:ss')
+}
+export function timeAfterNow(detik: number): string {
+    return moment(now()).add(detik, "seconds").format("YYYY-MM-DD HH:mm:ss")
+}
 export function formatDate(date: Date): string {
     return moment(date).format('YYYY-MM-DD HH:mm:ss')
 }

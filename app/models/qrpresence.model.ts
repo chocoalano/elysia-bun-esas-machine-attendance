@@ -1,10 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-import type { FormSubmitPayload } from '../types/attmachine/form.type';
-import moment from 'moment';
+import type { FormQRSubmitPayload } from '../types/attmachine/form.type';
 import { hash } from 'bcrypt';
+import { formatDateNow, timeAfterNow } from '../utils/supports';
 
 const prisma = new PrismaClient();
-type QrPresenceInput = typeof FormSubmitPayload.static;
+type QrPresenceInput = typeof FormQRSubmitPayload.static;
 
 export const QrPresenceModel = {
     all: () => prisma.qr_presences.findMany(),
@@ -17,10 +17,10 @@ export const QrPresenceModel = {
             type: data.type,
             departement_id: data.departement_id,
             timework_id: data.shift_id,
-            for_presence: new Date(),
-            expires_at: moment().add(10, 'seconds').toDate(),
-            created_at: new Date(),
-            updated_at: new Date(),
+            for_presence: formatDateNow(),
+            expires_at: timeAfterNow(10),
+            created_at: formatDateNow(),
+            updated_at: formatDateNow(),
         },
     }),
 
@@ -31,9 +31,9 @@ export const QrPresenceModel = {
             type: data.type,
             departement_id: data.departement_id,
             timework_id: data.shift_id,
-            for_presence: new Date(),
-            expires_at: moment().add(10, 'seconds').toDate(),
-            updated_at: new Date(),
+            for_presence: formatDateNow(),
+            expires_at: timeAfterNow(10),
+            updated_at: formatDateNow(),
         },
     }),
 
