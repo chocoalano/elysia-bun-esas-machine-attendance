@@ -10,12 +10,12 @@ export function randomNumbersByDatetime(): string {
     return moment(now()).format('YYYYMMDDHHmmss')
 }
 
-export function formatDateNow(): Date {
-    return moment().toDate();
+export function formatDateNow(): string {
+    return moment().format('YYYY-MM-DD HH:mm:ss');
 }
 
-export function timeAfterNow(seconds: number): Date {
-    return moment().add(seconds, "seconds").toDate();
+export function timeAfterNow(seconds: number): string {
+    return moment().add(seconds, "seconds").format('YYYY-MM-DD HH:mm:ss');
 }
 
 export function formatDate(date: Date): string {

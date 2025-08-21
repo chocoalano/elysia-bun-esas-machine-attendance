@@ -11,31 +11,94 @@ export const QrPresenceModel = {
 
     find: (id: number) => prisma.qr_presences.findUnique({ where: { id } }),
 
-    create: async (data: QrPresenceInput) => prisma.qr_presences.create({
-        data: {
-            token: await hash(new Date().toString(), 12),
-            type: data.type,
-            departement_id: data.departement_id,
-            timework_id: data.shift_id,
-            for_presence: formatDateNow(),
-            expires_at: timeAfterNow(10),
-            created_at: formatDateNow(),
-            updated_at: formatDateNow(),
-        },
-    }),
+    create: async (data: QrPresenceInput) => {
+        const token = await hash(formatDateNow().toString(), 12)
+        await prisma.$executeRaw`
+            INSERT INTO qr_presences
+            (type, departement_id, timework_id, token, for_presence, expires_at, created_at, updated_at)
+            VALUES
+            (${data.type}, ${data.departement_id}, ${data.shift_id}, ${token},
+            ${formatDateNow()},
+            ${timeAfterNow(10)},
+            ${formatDateNow()},
+            ${formatDateNow()}
+        )`;
+        const rows = await prisma.$queryRaw<
+            Array<{
+                id: bigint;
+                type: string;
+                departement_id: bigint;
+                timework_id: bigint;
+                token: string;
+                for_presence: string;
+                expires_at: string;
+                created_at: string;
+                updated_at: string;
+            }>
+        >`
+            SELECT
+            id,
+            type,
+            departement_id,
+            timework_id,
+            token,
+            DATE_FORMAT(for_presence, '%Y-%m-%d %H:%i:%s') AS for_presence,
+            DATE_FORMAT(expires_at,  '%Y-%m-%d %H:%i:%s') AS expires_at,
+            DATE_FORMAT(created_at,  '%Y-%m-%d %H:%i:%s') AS created_at,
+            DATE_FORMAT(updated_at,  '%Y-%m-%d %H:%i:%s') AS updated_at
+            FROM qr_presences
+            WHERE token = ${token}
+            ORDER BY id DESC
+            LIMIT 1
+        `;
 
-    update: async (id: number, data: Partial<QrPresenceInput>) => prisma.qr_presences.update({
-        where: { id },
-        data: {
-            token: await hash(new Date().toString(), 12),
-            type: data.type,
-            departement_id: data.departement_id,
-            timework_id: data.shift_id,
-            for_presence: formatDateNow(),
-            expires_at: timeAfterNow(10),
-            updated_at: formatDateNow(),
-        },
-    }),
+        return rows[0] ?? null;
+
+    },
+
+    update: async (id: number, data: Partial<QrPresenceInput>) => {
+        const token = await hash(formatDateNow().toString(), 12)
+        await prisma.$executeRaw`
+            UPDATE qr_presences SET 
+            type=${data.type},
+            departement_id=${data.departement_id},
+            timework_id=${data.shift_id},
+            token=${token},
+            for_presence=${formatDateNow()},
+            expires_at=${timeAfterNow(10)},
+            updated_at=${formatDateNow()} 
+            WHERE id=${id}
+        )`;
+        const rows = await prisma.$queryRaw<
+            Array<{
+                id: bigint;
+                type: string;
+                departement_id: bigint;
+                timework_id: bigint;
+                token: string;
+                for_presence: string;
+                expires_at: string;
+                created_at: string;
+                updated_at: string;
+            }>
+        >`
+            SELECT
+            id,
+            type,
+            departement_id,
+            timework_id,
+            token,
+            DATE_FORMAT(for_presence, '%Y-%m-%d %H:%i:%s') AS for_presence,
+            DATE_FORMAT(expires_at,  '%Y-%m-%d %H:%i:%s') AS expires_at,
+            DATE_FORMAT(created_at,  '%Y-%m-%d %H:%i:%s') AS created_at,
+            DATE_FORMAT(updated_at,  '%Y-%m-%d %H:%i:%s') AS updated_at
+            FROM qr_presences
+            WHERE id = ${id}
+            LIMIT 1
+        `;
+
+        return rows[0] ?? null;
+    },
 
     delete: (id: number) => prisma.qr_presences.delete({ where: { id } }),
 
@@ -47,3 +110,4 @@ export const QrPresenceModel = {
 
     count: () => prisma.qr_presences.count(),
 };
+
