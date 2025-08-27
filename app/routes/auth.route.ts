@@ -5,8 +5,10 @@ import { jwtconfig } from '../utils/jwt';
 import { auth } from '../middlewares/auth';
 import { loginDocumentation } from '../swagger/auth/login.documentation';
 import { profileDocumentation } from '../swagger/auth/profile.documentation';
+import { onErrorHandler } from '../utils/validator/onerror';
 
 export const authRoutes = new Elysia({ prefix: '/auth' })
+  .onError(onErrorHandler)
   .use(jwtconfig)
 
   // LOGIN

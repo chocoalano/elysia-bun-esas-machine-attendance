@@ -8,11 +8,13 @@ import { putDocumentation } from '../swagger/user/put.documentation';
 import { deleteDocumentation } from '../swagger/user/delete.documentation';
 import { auth } from '../middlewares/auth';
 import { avatarDocumentation } from '../swagger/user/avatar.documentation';
+import { onErrorHandler } from '../utils/validator/onerror';
 
 export const userRoutes = new Elysia({ prefix: '/users' })
+  .onError(onErrorHandler)
   .post('/avatar/:id', async ({ params, body }) => await UserController.avatar(params.id, body), {
     params: t.Object({ id: t.Number() }),
-    body: t.Object({file: t.File({ format : 'image/*' }) }),
+    body: t.Object({ file: t.File({ format: 'image/*' }) }),
     detail: avatarDocumentation()
   })
   .use(auth)

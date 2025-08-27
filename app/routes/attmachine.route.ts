@@ -1,14 +1,16 @@
 // src/router/attmachine.router.ts
 
-import { Elysia, status, t } from 'elysia';
+import { Elysia, ValidationError } from 'elysia';
 import { AttmachineController } from '../controllers/attmachine.controller';
 import { formQrDocumentation } from '../swagger/attmachine/Qr/form.documentation';
 import { formQrSubmitDocumentation } from '../swagger/attmachine/Qr/form-submnit.documentation';
 import { FormFacePayload, FormFaceSubmitPayload, FormQRPayload, FormQRSubmitPayload } from '../types/attmachine/form.type';
 import { formFaceDocumentation } from '../swagger/attmachine/Face/form.documentation';
 import { formFaceSubmitDocumentation } from '../swagger/attmachine/Face/form-submnit.documentation';
+import { onErrorHandler } from '../utils/validator/onerror';
 
 export const attmachineRoute = new Elysia({ prefix: '/attmachine' })
+  .onError(onErrorHandler)
   .get('/qr-form', async ({ query }) => await AttmachineController.qr_form(query), {
     query: FormQRPayload,
     detail: formQrDocumentation(),
@@ -25,3 +27,7 @@ export const attmachineRoute = new Elysia({ prefix: '/attmachine' })
     body: FormFaceSubmitPayload,
     detail: formFaceSubmitDocumentation(),
   });
+
+function buildValidationErrors(error: Readonly<ValidationError>) {
+  throw new Error('Function not implemented.');
+}

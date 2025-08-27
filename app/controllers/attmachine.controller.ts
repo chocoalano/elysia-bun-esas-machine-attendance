@@ -82,45 +82,62 @@ export const AttmachineController = {
     },
 
     face_submit: async (data: typeof FormFaceSubmitPayload.static) => {
-        const file = data.image;
-        if (!file || !(file instanceof File) || file.size === 0) {
-            return response(false, 'File tidak valid', {}, 400);
+        // 1) Validasi input dasar
+        const file = data.image
+        if (!(file instanceof File) || file.size === 0) {
+            return response(false, 'File tidak valid', {}, 400)
         }
-        const user = await UserModel.find(Number(data.user_id));
+
+        const userId = Number(data.user_id)
+        const timeId = Number(data.time_id)
+        const lat = Number(data.lat)
+        const lng = Number(data.long)
+        const when = data.time
+
+        if (!Number.isFinite(userId) || !Number.isFinite(timeId)) {
+            return response(false, 'Parameter tidak valid', {}, 422)
+        }
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            return response(false, 'Koordinat tidak valid', {}, 422)
+        }
+        // 2) Pastikan user ada
+        const user = await UserModel.find(userId)
         if (!user) {
-            return response(false, 'Pengguna tidak ditemukan', {}, 404);
+            return response(false, 'Pengguna tidak ditemukan', {}, 404)
         }
-        const fileName = `${user.nip}-${randomNumbersByDatetime()}.jpg`;
-        const imageUrl = await uploadToSpace('attendances', file, fileName);
 
         try {
             if (data.type === 'in') {
-                await AttendanceModel.attendance_in(
-                    Number(data.user_id),
-                    Number(data.time_id),
-                    Number(data.lat),
-                    Number(data.long),
-                    imageUrl,
-                    data.time
-                );
-            } else {
-                await AttendanceModel.attendance_out(
-                    Number(data.user_id),
-                    Number(data.time_id),
-                    Number(data.lat),
-                    Number(data.long),
-                    imageUrl,
-                    data.time
-                );
-            }
+                // 3) Cek sudah absen masuk hari ini? (ARRAY → cek length)
+                const today = await AttendanceModel.getTodayAttendance(userId)
+                if (Array.isArray(today) ? today.length > 0 : !!today) {
+                    // sudah ada check-in
+                    return response(false, 'Anda sudah melakukan absensi masuk untuk hari ini', {}, 409)
+                }
 
-            return response(true, 'Absensi berhasil dibuat', {}, 200);
-        } catch (error) {
-            // console.error('❌ Stored Procedure Error:', error);
-            if (error instanceof Prisma.PrismaClientKnownRequestError) {
-                return response(false, 'terjadi kesalahan', error.meta, 400);
+                // 4) Baru upload & simpan bila lolos validasi
+                const fileName = `${user.nip}-${randomNumbersByDatetime()}.jpg`
+                const imageUrl = await uploadToSpace('attendances', file, fileName)
+
+                await AttendanceModel.attendance_in(
+                    userId, timeId, lat, lng, imageUrl, when
+                )
+
+                return response(true, 'Absensi masuk berhasil', {}, 201)
             }
-            return response(false, 'Gagal menjalankan absensi', {}, 500);
+            const fileName = `${user.nip}-${randomNumbersByDatetime()}.jpg`
+            const imageUrl = await uploadToSpace('attendances', file, fileName)
+
+            await AttendanceModel.attendance_out(
+                userId, timeId, lat, lng, imageUrl, when
+            )
+
+            return response(true, 'Absensi keluar berhasil', {}, 200)
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                return response(false, 'Terjadi kesalahan basis data', { code: error.code, meta: error.meta }, 400)
+            }
+            return response(false, 'Gagal menjalankan absensi', {}, 500)
         }
     }
 
