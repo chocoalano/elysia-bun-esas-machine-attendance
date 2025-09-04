@@ -33,7 +33,7 @@ export const AttendanceModel = {
         type_in: { not: null },
         created_at: {
           gte: todayStart,
-          lte: todayEnd,
+          lt: todayEnd,
         },
       },
     });

@@ -45,7 +45,9 @@ export const AttmachineController = {
 
     qr_submit: async (data: typeof FormQRSubmitPayload.static) => {
         const save = await QrPresenceModel.create(data)
-        return response(true, 'QR Code berhasil dibuat', normalizeData(save), 200);
+        console.log(save);
+        
+        return response(true, 'QR Code berhasil dibuat', save, 200);
     },
 
     face_form: async (query: typeof FormFacePayload.static) => {
@@ -114,6 +116,7 @@ export const AttmachineController = {
                     // sudah ada check-in
                     return response(false, 'Anda sudah melakukan absensi masuk untuk hari ini', {}, 409)
                 }
+                console.log(today);
 
                 // 4) Baru upload & simpan bila lolos validasi
                 const fileName = `${user.nip}-${randomNumbersByDatetime()}.jpg`
