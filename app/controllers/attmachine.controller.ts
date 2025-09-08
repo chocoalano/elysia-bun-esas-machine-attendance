@@ -8,8 +8,9 @@ import { UserModel } from "../models/user.model";
 import { AttendanceModel } from "../models/useratt.model";
 import { Prisma } from '@prisma/client';
 
-import type { FormFacePayload, FormFaceSubmitPayload, FormQRPayload, FormQRSubmitPayload } from "../types/attmachine/form.type";
+import type { FormFacePayload, FormFaceSubmitPayload, FormQRPayload, FormQRSubmitPayload, FormQRSubmitPresencePayload } from "../types/attmachine/form.type";
 import { normalizeData, randomNumbersByDatetime, response, uploadToSpace } from "../utils/supports";
+import { mapPrismaError } from "../utils/prisma-error";
 
 export const AttmachineController = {
     qr_form: async (query: typeof FormQRPayload.static) => {
@@ -45,9 +46,17 @@ export const AttmachineController = {
 
     qr_submit: async (data: typeof FormQRSubmitPayload.static) => {
         const save = await QrPresenceModel.create(data)
-        console.log(save);
-        
         return response(true, 'QR Code berhasil dibuat', save, 200);
+    },
+    qr_presence: async (data: typeof FormQRSubmitPresencePayload.static) => {
+        try {
+            await QrPresenceModel.presence(data)
+            return response(true, 'QR Code presence berhasil', data, 200)
+        } catch (err) {
+            const { status, message, code } = mapPrismaError(err)
+            // console.error('QR presence error:', { code, message, raw: err })
+            return response(false, message, { code }, status)
+        }
     },
 
     face_form: async (query: typeof FormFacePayload.static) => {
@@ -116,8 +125,6 @@ export const AttmachineController = {
                     // sudah ada check-in
                     return response(false, 'Anda sudah melakukan absensi masuk untuk hari ini', {}, 409)
                 }
-                console.log(today);
-
                 // 4) Baru upload & simpan bila lolos validasi
                 const fileName = `${user.nip}-${randomNumbersByDatetime()}.jpg`
                 const imageUrl = await uploadToSpace('attendances', file, fileName)

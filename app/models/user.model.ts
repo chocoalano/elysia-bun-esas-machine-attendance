@@ -19,6 +19,7 @@ export const UserModel = {
     findByCompanyDept: (company_id: number, departement_id: number) => prisma.users.findMany({
         where: {
             company_id: company_id,
+            deleted_at:null,
             user_employes: {
                 some: {
                     departement_id: departement_id,

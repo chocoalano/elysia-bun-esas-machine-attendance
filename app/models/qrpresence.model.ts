@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client';
-import type { FormQRSubmitPayload } from '../types/attmachine/form.type';
+import type { FormQRSubmitPayload, FormQRSubmitPresencePayload } from '../types/attmachine/form.type';
 import { hash } from 'bcrypt';
 import { formatDate, formatDateNow, timeAfterNow } from '../utils/supports';
 
 const prisma = new PrismaClient();
 type QrPresenceInput = typeof FormQRSubmitPayload.static;
+type QrPresenceInOutInput = typeof FormQRSubmitPresencePayload.static;
 
 export const QrPresenceModel = {
     all: () => prisma.qr_presences.findMany(),
@@ -48,6 +49,20 @@ export const QrPresenceModel = {
 
                 if (!row) throw new Error('Gagal mengambil data QR yang baru dibuat')
                 return row;
+            }
+        )
+        return inserted
+    },
+    
+    presence: async (data: QrPresenceInOutInput) => {
+        const inserted = await prisma.$transaction(
+            async (tx) => {
+                await tx.$executeRaw`
+                CALL QrAttendance(
+                    ${data.user_id},
+                    ${data.type},
+                    ${data.token_id}
+                )`
             }
         )
         return inserted

@@ -14,6 +14,14 @@ export const FormQRSubmitPayload = t.Object({
     out: 'out',
   }),
 });
+export const FormQRSubmitPresencePayload = t.Object({
+  user_id: t.Number(),
+  token_id: t.Number(),
+  type: t.Enum({
+    in: 'in',
+    out: 'out',
+  }),
+});
 export const FormFacePayload = t.Object({
   company_id: t.Optional(t.Number()),
   departement_id: t.Optional(t.Number()),

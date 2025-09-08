@@ -19,8 +19,6 @@ export function timeAfterNow(seconds: number): string {
 }
 
 export function formatDate(date: Date | string | number): string {
-  console.log(date);
-  
   return moment(date).format("YYYY-MM-DD HH:mm:ss");
 }
 
