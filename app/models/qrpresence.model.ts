@@ -53,19 +53,15 @@ export const QrPresenceModel = {
         )
         return inserted
     },
-    
+
     presence: async (data: QrPresenceInOutInput) => {
-        const inserted = await prisma.$transaction(
-            async (tx) => {
-                await tx.$executeRaw`
-                CALL QrAttendance(
-                    ${data.user_id},
-                    ${data.type},
-                    ${data.token_id}
-                )`
-            }
-        )
-        return inserted
+        const result = await prisma.$queryRaw`
+            CALL QrAttendance(
+                ${data.user_id},
+                ${data.type},
+                ${data.token_id}
+            )`;
+        return result
     },
 
     update: async (id: number, data: Partial<QrPresenceInput>) => {
