@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/db';
 import type { FormQRSubmitPayload, FormQRSubmitPresencePayload } from '../types/attmachine/form.type';
 import { hash } from 'bcrypt';
-import { formatDate, formatDateNow, timeAfterNow } from '../utils/supports';
+import { formatDateNow, timeAfterNow } from '../utils/supports';
 
-const prisma = new PrismaClient();
 type QrPresenceInput = typeof FormQRSubmitPayload.static;
 type QrPresenceInOutInput = typeof FormQRSubmitPresencePayload.static;
 

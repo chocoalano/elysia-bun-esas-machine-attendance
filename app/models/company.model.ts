@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/db';
 import type { Companies } from '../types/type';
 
-const prisma = new PrismaClient();
 type CompanyInput = typeof Companies.static;
 
 export const CompanyModel = {

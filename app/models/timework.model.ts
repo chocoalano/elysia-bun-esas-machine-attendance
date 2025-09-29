@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../utils/db';
 import type { TimeWorkes } from '../types/type';
-
-const prisma = new PrismaClient();
 type TimeworkInput = typeof TimeWorkes.static;
 
 export const TimeworkModel = {

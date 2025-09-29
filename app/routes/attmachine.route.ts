@@ -1,6 +1,6 @@
 // src/router/attmachine.router.ts
 
-import { Elysia, ValidationError } from 'elysia';
+import { Elysia } from 'elysia';
 import { AttmachineController } from '../controllers/attmachine.controller';
 import { formQrDocumentation } from '../swagger/attmachine/Qr/form.documentation';
 import { formQrSubmitDocumentation } from '../swagger/attmachine/Qr/form-submnit.documentation';
@@ -8,6 +8,7 @@ import { FormFacePayload, FormFaceSubmitPayload, FormQRPayload, FormQRSubmitPayl
 import { formFaceDocumentation } from '../swagger/attmachine/Face/form.documentation';
 import { formFaceSubmitDocumentation } from '../swagger/attmachine/Face/form-submnit.documentation';
 import { onErrorHandler } from '../utils/validator/onerror';
+import { QrAttendanceDocumentation } from '../swagger/attmachine/Qr/qr-attendance.documentation';
 
 export const attmachineRoute = new Elysia({ prefix: '/attmachine' })
   .onError(onErrorHandler)
@@ -21,7 +22,7 @@ export const attmachineRoute = new Elysia({ prefix: '/attmachine' })
   })
   .post('/qr-presence', async ({ body }) => await AttmachineController.qr_presence(body), {
     body: FormQRSubmitPresencePayload,
-    detail: formQrSubmitDocumentation(),
+    detail: QrAttendanceDocumentation(),
   })
   .get('/face-form', async ({ query }) => await AttmachineController.face_form(query), {
     query: FormFacePayload,
@@ -31,7 +32,3 @@ export const attmachineRoute = new Elysia({ prefix: '/attmachine' })
     body: FormFaceSubmitPayload,
     detail: formFaceSubmitDocumentation(),
   });
-
-function buildValidationErrors(error: Readonly<ValidationError>) {
-  throw new Error('Function not implemented.');
-}

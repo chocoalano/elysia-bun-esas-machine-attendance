@@ -10,7 +10,6 @@ import { Prisma } from '@prisma/client';
 
 import type { FormFacePayload, FormFaceSubmitPayload, FormQRPayload, FormQRSubmitPayload, FormQRSubmitPresencePayload } from "../types/attmachine/form.type";
 import { normalizeData, randomNumbersByDatetime, response, uploadToSpace } from "../utils/supports";
-import { mapPrismaError } from "../utils/prisma-error";
 
 export const AttmachineController = {
     qr_form: async (query: typeof FormQRPayload.static) => {
@@ -49,14 +48,8 @@ export const AttmachineController = {
         return response(true, 'QR Code berhasil dibuat', save, 200);
     },
     qr_presence: async (data: typeof FormQRSubmitPresencePayload.static) => {
-        try {
-            await QrPresenceModel.presence(data)
-            return response(true, 'QR Code presence berhasil', data, 200)
-        } catch (err) {
-            const { status, message, code } = mapPrismaError(err)
-            // console.error('QR presence error:', { code, message, raw: err })
-            return response(false, message, { code }, status)
-        }
+        await QrPresenceModel.presence(data)
+        return response(true, 'Absensi berhasil tersimpan', {}, 200);
     },
 
     face_form: async (query: typeof FormFacePayload.static) => {
@@ -117,38 +110,31 @@ export const AttmachineController = {
             return response(false, 'Pengguna tidak ditemukan', {}, 404)
         }
 
-        try {
-            if (data.type === 'in') {
-                // 3) Cek sudah absen masuk hari ini? (ARRAY → cek length)
-                const today = await AttendanceModel.getTodayAttendance(userId)
-                if (Array.isArray(today) ? today.length > 0 : !!today) {
-                    // sudah ada check-in
-                    return response(false, 'Anda sudah melakukan absensi masuk untuk hari ini', {}, 409)
-                }
-                // 4) Baru upload & simpan bila lolos validasi
-                const fileName = `${user.nip}-${randomNumbersByDatetime()}.jpg`
-                const imageUrl = await uploadToSpace('attendances', file, fileName)
-
-                await AttendanceModel.attendance_in(
-                    userId, timeId, lat, lng, imageUrl, when
-                )
-
-                return response(true, 'Absensi masuk berhasil', {}, 201)
+        if (data.type === 'in') {
+            // 3) Cek sudah absen masuk hari ini? (ARRAY → cek length)
+            const today = await AttendanceModel.getTodayAttendance(userId)
+            if (Array.isArray(today) ? today.length > 0 : !!today) {
+                // sudah ada check-in
+                return response(false, 'Anda sudah melakukan absensi masuk untuk hari ini', {}, 409)
             }
+            // 4) Baru upload & simpan bila lolos validasi
             const fileName = `${user.nip}-${randomNumbersByDatetime()}.jpg`
             const imageUrl = await uploadToSpace('attendances', file, fileName)
 
-            await AttendanceModel.attendance_out(
+            await AttendanceModel.attendance_in(
                 userId, timeId, lat, lng, imageUrl, when
             )
 
-            return response(true, 'Absensi keluar berhasil', {}, 200)
-        } catch (error) {
-            if (error instanceof Prisma.PrismaClientKnownRequestError) {
-                return response(false, 'Terjadi kesalahan basis data', { code: error.code, meta: error.meta }, 400)
-            }
-            return response(false, 'Gagal menjalankan absensi', {}, 500)
+            return response(true, 'Absensi masuk berhasil', {}, 201)
         }
+        const fileName = `${user.nip}-${randomNumbersByDatetime()}.jpg`
+        const imageUrl = await uploadToSpace('attendances', file, fileName)
+
+        await AttendanceModel.attendance_out(
+            userId, timeId, lat, lng, imageUrl, when
+        )
+
+        return response(true, 'Absensi keluar berhasil', {}, 200)
     }
 
 };

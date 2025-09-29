@@ -1,11 +1,21 @@
 // utils/datetime.ts
-import moment from "moment-timezone";
+import moment, { type Moment } from "moment-timezone";
 import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "./s3";
 
 /* =========================
  * Date formatting
  * ========================= */
+export function getTime(time: Date): string {
+  const newTime = new Date(time.getTime());
+  newTime.setHours(newTime.getHours());
+  return moment(newTime).format('HH:mm:ss');
+}
+
+export function getTimeNow(): Date {
+  return moment.utc().add(7, "hours").toDate();
+}
+
 export function randomNumbersByDatetime(): string {
   return moment().format("YYYYMMDDHHmmss");
 }
@@ -20,6 +30,9 @@ export function timeAfterNow(seconds: number): string {
 
 export function formatDate(date: Date | string | number): string {
   return moment(date).format("YYYY-MM-DD HH:mm:ss");
+}
+export function formatDateYmd(date: Date | string | number): string {
+  return moment(date).format("YYYY-MM-DD");
 }
 
 export function formatDateTime(date: Date | string | number | null): string | null {

@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { startOfDay, endOfDay } from 'date-fns';
-
-const prisma = new PrismaClient();
+import { prisma, withRetry } from '../utils/db';
 
 export const AttendanceModel = {
   attendance_in: (
@@ -12,7 +10,7 @@ export const AttendanceModel = {
     image_url: string,
     time: string
   ) =>
-    prisma.$executeRawUnsafe(
+    withRetry(() => prisma.$executeRawUnsafe(
       `CALL UpdateAttendanceIn(?, ?, ?, ?, ?, ?)`,
       user_id,
       time_id,
@@ -20,7 +18,7 @@ export const AttendanceModel = {
       long,
       image_url,
       time,
-    ),
+    )),
 
   async getTodayAttendance(userId: number) {
     const todayStart = startOfDay(new Date());
@@ -46,14 +44,13 @@ export const AttendanceModel = {
     long: number,
     image_url: string,
     time: string
-  ) =>
-    prisma.$executeRawUnsafe(
-      `CALL UpdateAttendanceOut(?, ?, ?, ?, ?, ?)`,
-      user_id,
-      time_id,
-      lat,
-      long,
-      image_url,
-      time,
-    ),
+  ) => withRetry(() => prisma.$executeRawUnsafe(
+    `CALL UpdateAttendanceOut(?, ?, ?, ?, ?, ?)`,
+    user_id,
+    time_id,
+    lat,
+    long,
+    image_url,
+    time,
+  ),)
 };
