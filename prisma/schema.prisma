@@ -427,6 +427,8 @@ model user_employes {
   saldo_cuti          Int?
   created_at          DateTime? @db.Timestamp(0)
   updated_at          DateTime? @db.Timestamp(0)
+
+  @@map("user_employes")
 }
 
 model user_families {
@@ -531,6 +533,7 @@ model users {
   wo_signoffs_wo_signoffs_head_maintenance_idTousers        wo_signoffs[]          @relation("wo_signoffs_head_maintenance_idTousers")
   wo_signoffs_wo_signoffs_requester_verify_idTousers        wo_signoffs[]          @relation("wo_signoffs_requester_verify_idTousers")
   work_orders                                               work_orders[]
+  user_employes  user_employes?
 }
 
 model activity_logs {
