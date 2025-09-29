@@ -8,6 +8,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model activity_logs {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt?   @db.UnsignedBigInt
+  method     String    @db.VarChar(10)
+  url        String    @db.LongText
+  action     String?   @db.VarChar(255)
+  model_type String?   @db.VarChar(255)
+  model_id   BigInt?   @db.UnsignedBigInt
+  payload    String?   @db.LongText
+  ip_address String?   @db.VarChar(45)
+  user_agent String?   @db.Text
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  deleted_at DateTime? @db.Timestamp(0)
+  users      users?    @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "activity_logs_user_id_foreign")
+
+  @@index([model_type, model_id], map: "activity_logs_model_type_model_id_index")
+  @@index([user_id], map: "activity_logs_user_id_foreign")
+}
+
 model announcements {
   id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
   company_id BigInt    @db.UnsignedBigInt
@@ -17,6 +37,25 @@ model announcements {
   content    String    @db.LongText
   created_at DateTime? @db.Timestamp(0)
   updated_at DateTime? @db.Timestamp(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model attachments {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  owner_type     String    @db.VarChar(50)
+  owner_id       BigInt    @db.UnsignedBigInt
+  file_name      String?   @db.VarChar(255)
+  file_path      String?   @db.VarChar(500)
+  url            String?   @db.Text
+  meta           Json?
+  uploaded_by_id BigInt?   @db.UnsignedBigInt
+  uploaded_at    DateTime  @default(now()) @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  users          users?    @relation(fields: [uploaded_by_id], references: [id], onUpdate: NoAction, map: "attachments_uploaded_by_id_foreign")
+
+  @@index([owner_type, owner_id], map: "attachments_owner_idx")
+  @@index([uploaded_by_id], map: "attachments_uploaded_by_id_foreign")
 }
 
 model bug_reports {
@@ -72,6 +111,79 @@ model departements {
   design_requests                                           design_requests[]
   work_orders_work_orders_department_idTodepartements       work_orders[]     @relation("work_orders_department_idTodepartements")
   work_orders_work_orders_department_providesTodepartements work_orders[]     @relation("work_orders_department_providesTodepartements")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model design_approvals {
+  id                BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  design_request_id BigInt                  @db.UnsignedBigInt
+  approver_id       BigInt?                 @db.UnsignedBigInt
+  status            design_approvals_status @default(PENDING)
+  decided_at        DateTime?               @db.Timestamp(0)
+  remarks           String?                 @db.Text
+  created_at        DateTime?               @db.Timestamp(0)
+  updated_at        DateTime?               @db.Timestamp(0)
+  users             users?                  @relation(fields: [approver_id], references: [id], onUpdate: NoAction, map: "design_approvals_approver_id_foreign")
+  design_requests   design_requests         @relation(fields: [design_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "design_approvals_design_request_id_foreign")
+
+  @@index([approver_id], map: "design_approvals_approver_id_foreign")
+  @@index([design_request_id, status], map: "design_approvals_status_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model design_request_items {
+  id                BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  design_request_id BigInt          @db.UnsignedBigInt
+  line_no           Int
+  kebutuhan         String          @db.Text
+  isi_konten        String?         @db.Text
+  ukuran            String?         @db.VarChar(100)
+  referensi         String?         @db.Text
+  keterangan        String?         @db.Text
+  created_at        DateTime?       @db.Timestamp(0)
+  updated_at        DateTime?       @db.Timestamp(0)
+  design_requests   design_requests @relation(fields: [design_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "design_request_items_design_request_id_foreign")
+
+  @@unique([design_request_id, line_no], map: "dri_unique_line")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model design_requests {
+  id                                              BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  request_no                                      String?                  @unique(map: "design_requests_request_no_unique") @db.VarChar(50)
+  request_date                                    DateTime                 @db.Date
+  need_by_date                                    DateTime?                @db.Date
+  priority                                        design_requests_priority
+  pic_id                                          BigInt                   @db.UnsignedBigInt
+  division_id                                     BigInt?                  @db.UnsignedBigInt
+  submitted_to_id                                 BigInt?                  @db.UnsignedBigInt
+  acknowledged_by_id                              BigInt?                  @db.UnsignedBigInt
+  status                                          design_requests_status   @default(DRAFT)
+  notes                                           String?                  @db.Text
+  created_at                                      DateTime?                @db.Timestamp(0)
+  updated_at                                      DateTime?                @db.Timestamp(0)
+  design_approvals                                design_approvals[]
+  design_request_items                            design_request_items[]
+  users_design_requests_acknowledged_by_idTousers users?                   @relation("design_requests_acknowledged_by_idTousers", fields: [acknowledged_by_id], references: [id], onUpdate: NoAction, map: "design_requests_acknowledged_by_id_foreign")
+  departements                                    departements?            @relation(fields: [division_id], references: [id], onUpdate: NoAction, map: "design_requests_division_id_foreign")
+  users_design_requests_pic_idTousers             users                    @relation("design_requests_pic_idTousers", fields: [pic_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "design_requests_pic_id_foreign")
+  users_design_requests_submitted_to_idTousers    users?                   @relation("design_requests_submitted_to_idTousers", fields: [submitted_to_id], references: [id], onUpdate: NoAction, map: "design_requests_submitted_to_id_foreign")
+
+  @@index([acknowledged_by_id], map: "design_requests_acknowledged_by_id_foreign")
+  @@index([division_id], map: "design_requests_division_id_foreign")
+  @@index([pic_id], map: "design_requests_pic_id_foreign")
+  @@index([submitted_to_id], map: "design_requests_submitted_to_id_foreign")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model documentations {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  title      String    @db.VarChar(255)
+  subtitle   String?   @db.VarChar(255)
+  text_docs  String    @db.LongText
+  status     Boolean   @default(true)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
 }
 
 model exports {
@@ -173,6 +285,17 @@ model jobs {
   reserved_at  Int?   @db.UnsignedInt
   available_at Int    @db.UnsignedInt
   created_at   Int    @db.UnsignedInt
+}
+
+model log_user_attendances {
+  id         BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt?                    @db.UnsignedBigInt
+  type       log_user_attendances_type? @default(in)
+  created_at DateTime?                  @db.Timestamp(0)
+  updated_at DateTime?                  @db.Timestamp(0)
+  users      users?                     @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "log_user_attendances_user_id_foreign")
+
+  @@index([user_id], map: "log_user_attendances_user_id_foreign")
 }
 
 model migrations {
@@ -349,6 +472,24 @@ model settings {
   deleted_at                   DateTime? @db.Timestamp(0)
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model status_histories {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  owner_type    String    @db.VarChar(50)
+  owner_id      BigInt    @db.UnsignedBigInt
+  from_status   String?   @db.VarChar(30)
+  to_status     String    @db.VarChar(30)
+  changed_by_id BigInt?   @db.UnsignedBigInt
+  changed_at    DateTime  @default(now()) @db.Timestamp(0)
+  remarks       String?   @db.Text
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+  users         users?    @relation(fields: [changed_by_id], references: [id], onUpdate: NoAction, map: "status_histories_changed_by_id_foreign")
+
+  @@index([changed_by_id], map: "status_histories_changed_by_id_foreign")
+  @@index([owner_type, owner_id, changed_at], map: "status_histories_owner_idx")
+}
+
 model time_workes {
   id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
   company_id    BigInt    @db.UnsignedBigInt
@@ -412,7 +553,7 @@ model user_details {
 
 model user_employes {
   id                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id             BigInt    @db.UnsignedBigInt
+  user_id             BigInt    @unique(map: "ux_user_employes_user_id") @db.UnsignedBigInt
   departement_id      BigInt?   @db.UnsignedBigInt
   job_position_id     BigInt?   @db.UnsignedBigInt
   job_level_id        BigInt?   @db.UnsignedBigInt
@@ -427,8 +568,7 @@ model user_employes {
   saldo_cuti          Int?
   created_at          DateTime? @db.Timestamp(0)
   updated_at          DateTime? @db.Timestamp(0)
-
-  @@map("user_employes")
+  user                users     @relation("UserEmployeOneToOne", fields: [user_id], references: [id], onDelete: Cascade, map: "fk_user_employes_user")
 }
 
 model user_families {
@@ -518,7 +658,7 @@ model users {
   is_attendance                                             Boolean                @default(false)
   created_at                                                DateTime?              @db.Timestamp(0)
   updated_at                                                DateTime?              @db.Timestamp(0)
-  deleted_at                                                DateTime?              @map("deleted_at") @db.Timestamp(0)
+  deleted_at                                                DateTime?              @db.Timestamp(0)
   activity_logs                                             activity_logs[]
   attachments                                               attachments[]
   design_approvals                                          design_approvals[]
@@ -527,154 +667,13 @@ model users {
   design_requests_design_requests_submitted_to_idTousers    design_requests[]      @relation("design_requests_submitted_to_idTousers")
   log_user_attendances                                      log_user_attendances[]
   status_histories                                          status_histories[]
+  user_employe                                              user_employes?         @relation("UserEmployeOneToOne")
   wo_clearances                                             wo_clearances[]
   wo_services                                               wo_services[]
   wo_signoffs_wo_signoffs_done_by_idTousers                 wo_signoffs[]          @relation("wo_signoffs_done_by_idTousers")
   wo_signoffs_wo_signoffs_head_maintenance_idTousers        wo_signoffs[]          @relation("wo_signoffs_head_maintenance_idTousers")
   wo_signoffs_wo_signoffs_requester_verify_idTousers        wo_signoffs[]          @relation("wo_signoffs_requester_verify_idTousers")
   work_orders                                               work_orders[]
-  user_employes  user_employes?
-}
-
-model activity_logs {
-  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id    BigInt?   @db.UnsignedBigInt
-  method     String    @db.VarChar(10)
-  url        String    @db.LongText
-  action     String?   @db.VarChar(255)
-  model_type String?   @db.VarChar(255)
-  model_id   BigInt?   @db.UnsignedBigInt
-  payload    String?   @db.LongText
-  ip_address String?   @db.VarChar(45)
-  user_agent String?   @db.Text
-  created_at DateTime? @db.Timestamp(0)
-  updated_at DateTime? @db.Timestamp(0)
-  deleted_at DateTime? @db.Timestamp(0)
-  users      users?    @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "activity_logs_user_id_foreign")
-
-  @@index([model_type, model_id], map: "activity_logs_model_type_model_id_index")
-  @@index([user_id], map: "activity_logs_user_id_foreign")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model attachments {
-  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  owner_type     String    @db.VarChar(50)
-  owner_id       BigInt    @db.UnsignedBigInt
-  file_name      String?   @db.VarChar(255)
-  file_path      String?   @db.VarChar(500)
-  url            String?   @db.Text
-  meta           Json?
-  uploaded_by_id BigInt?   @db.UnsignedBigInt
-  uploaded_at    DateTime  @default(now()) @db.Timestamp(0)
-  created_at     DateTime? @db.Timestamp(0)
-  updated_at     DateTime? @db.Timestamp(0)
-  users          users?    @relation(fields: [uploaded_by_id], references: [id], onUpdate: NoAction, map: "attachments_uploaded_by_id_foreign")
-
-  @@index([owner_type, owner_id], map: "attachments_owner_idx")
-  @@index([uploaded_by_id], map: "attachments_uploaded_by_id_foreign")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model design_approvals {
-  id                BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
-  design_request_id BigInt                  @db.UnsignedBigInt
-  approver_id       BigInt?                 @db.UnsignedBigInt
-  status            design_approvals_status @default(PENDING)
-  decided_at        DateTime?               @db.Timestamp(0)
-  remarks           String?                 @db.Text
-  created_at        DateTime?               @db.Timestamp(0)
-  updated_at        DateTime?               @db.Timestamp(0)
-  users             users?                  @relation(fields: [approver_id], references: [id], onUpdate: NoAction, map: "design_approvals_approver_id_foreign")
-  design_requests   design_requests         @relation(fields: [design_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "design_approvals_design_request_id_foreign")
-
-  @@index([approver_id], map: "design_approvals_approver_id_foreign")
-  @@index([design_request_id, status], map: "design_approvals_status_idx")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model design_request_items {
-  id                BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
-  design_request_id BigInt          @db.UnsignedBigInt
-  line_no           Int
-  kebutuhan         String          @db.Text
-  isi_konten        String?         @db.Text
-  ukuran            String?         @db.VarChar(100)
-  referensi         String?         @db.Text
-  keterangan        String?         @db.Text
-  created_at        DateTime?       @db.Timestamp(0)
-  updated_at        DateTime?       @db.Timestamp(0)
-  design_requests   design_requests @relation(fields: [design_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "design_request_items_design_request_id_foreign")
-
-  @@unique([design_request_id, line_no], map: "dri_unique_line")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model design_requests {
-  id                                              BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
-  request_no                                      String?                  @unique(map: "design_requests_request_no_unique") @db.VarChar(50)
-  request_date                                    DateTime                 @db.Date
-  need_by_date                                    DateTime?                @db.Date
-  priority                                        design_requests_priority
-  pic_id                                          BigInt                   @db.UnsignedBigInt
-  division_id                                     BigInt?                  @db.UnsignedBigInt
-  submitted_to_id                                 BigInt?                  @db.UnsignedBigInt
-  acknowledged_by_id                              BigInt?                  @db.UnsignedBigInt
-  status                                          design_requests_status   @default(DRAFT)
-  notes                                           String?                  @db.Text
-  created_at                                      DateTime?                @db.Timestamp(0)
-  updated_at                                      DateTime?                @db.Timestamp(0)
-  design_approvals                                design_approvals[]
-  design_request_items                            design_request_items[]
-  users_design_requests_acknowledged_by_idTousers users?                   @relation("design_requests_acknowledged_by_idTousers", fields: [acknowledged_by_id], references: [id], onUpdate: NoAction, map: "design_requests_acknowledged_by_id_foreign")
-  departements                                    departements?            @relation(fields: [division_id], references: [id], onUpdate: NoAction, map: "design_requests_division_id_foreign")
-  users_design_requests_pic_idTousers             users                    @relation("design_requests_pic_idTousers", fields: [pic_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "design_requests_pic_id_foreign")
-  users_design_requests_submitted_to_idTousers    users?                   @relation("design_requests_submitted_to_idTousers", fields: [submitted_to_id], references: [id], onUpdate: NoAction, map: "design_requests_submitted_to_id_foreign")
-
-  @@index([acknowledged_by_id], map: "design_requests_acknowledged_by_id_foreign")
-  @@index([division_id], map: "design_requests_division_id_foreign")
-  @@index([pic_id], map: "design_requests_pic_id_foreign")
-  @@index([submitted_to_id], map: "design_requests_submitted_to_id_foreign")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model documentations {
-  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  title      String    @db.VarChar(255)
-  subtitle   String?   @db.VarChar(255)
-  text_docs  String    @db.LongText
-  status     Boolean   @default(true)
-  created_at DateTime? @db.Timestamp(0)
-  updated_at DateTime? @db.Timestamp(0)
-}
-
-model log_user_attendances {
-  id         BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id    BigInt?                    @db.UnsignedBigInt
-  type       log_user_attendances_type? @default(in)
-  created_at DateTime?                  @db.Timestamp(0)
-  updated_at DateTime?                  @db.Timestamp(0)
-  users      users?                     @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "log_user_attendances_user_id_foreign")
-
-  @@index([user_id], map: "log_user_attendances_user_id_foreign")
-}
-
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model status_histories {
-  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  owner_type    String    @db.VarChar(50)
-  owner_id      BigInt    @db.UnsignedBigInt
-  from_status   String?   @db.VarChar(30)
-  to_status     String    @db.VarChar(30)
-  changed_by_id BigInt?   @db.UnsignedBigInt
-  changed_at    DateTime  @default(now()) @db.Timestamp(0)
-  remarks       String?   @db.Text
-  created_at    DateTime? @db.Timestamp(0)
-  updated_at    DateTime? @db.Timestamp(0)
-  users         users?    @relation(fields: [changed_by_id], references: [id], onUpdate: NoAction, map: "status_histories_changed_by_id_foreign")
-
-  @@index([changed_by_id], map: "status_histories_changed_by_id_foreign")
-  @@index([owner_type, owner_id, changed_at], map: "status_histories_owner_idx")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -779,10 +778,21 @@ enum qr_presences_type {
   out
 }
 
+enum log_user_attendances_type {
+  in
+  out
+}
+
 enum user_address_identity_type {
   ktp
   sim
   passport
+}
+
+enum design_approvals_status {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum user_families_relationship {
@@ -799,6 +809,12 @@ enum user_salaries_payment_type {
   Monthly
   Weekly
   Daily
+}
+
+enum design_requests_priority {
+  high
+  medium
+  low
 }
 
 enum permit_approves_user_approve {
@@ -884,35 +900,6 @@ enum users_status {
   resign
 }
 
-enum user_attendances_status_in {
-  late
-  unlate
-  normal
-}
-
-enum user_attendances_status_out {
-  late
-  unlate
-  normal
-}
-
-enum log_user_attendances_type {
-  in
-  out
-}
-
-enum design_approvals_status {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum design_requests_priority {
-  high
-  medium
-  low
-}
-
 enum design_requests_status {
   DRAFT
   SUBMITTED
@@ -929,4 +916,16 @@ enum work_orders_status {
   ON_HOLD
   DONE
   CANCELED
+}
+
+enum user_attendances_status_in {
+  late
+  unlate
+  normal
+}
+
+enum user_attendances_status_out {
+  late
+  unlate
+  normal
 }

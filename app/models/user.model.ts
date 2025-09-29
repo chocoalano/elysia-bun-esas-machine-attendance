@@ -5,7 +5,7 @@ type UserInput = typeof UserPayload.static;
 export const UserModel = {
     all: () => prisma.users.findMany(),
 
-    findbynip: (nip: string) => prisma.users.findUnique({
+    findbynip: (nip: string) => prisma.users.findFirst({
         where: {
             nip,
             status: 'active'
@@ -18,10 +18,10 @@ export const UserModel = {
         where: {
             company_id: company_id,
             deleted_at:null,
-            user_employes: {
-                some: {
-                    departement_id: departement_id,
-                },
+            user_employe: {
+                is: {
+                    departement_id: departement_id
+                }
             },
         },
     }),
