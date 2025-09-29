@@ -16,8 +16,14 @@ const app = new Elysia()
     },
   }))
   .get('/health/db', async () => {
-    await withRetry(() => prisma.$queryRawUnsafe('SELECT 1'))
-    return { ok: true, db: 'healthy' }
+    // (opsional) set zona waktu sesi
+    await prisma.$executeRawUnsafe("SET time_zone = '+07:00'")
+    const rows = await prisma.$queryRaw<{ now: Date }[]>`SELECT NOW() AS now`
+
+    if (!rows || rows.length === 0) {
+      throw new Error("Query NOW() gagal")
+    }
+    return { ok: true, now: rows[0]!.now }
   })
   .use(userRoutes)
   .use(authRoutes)

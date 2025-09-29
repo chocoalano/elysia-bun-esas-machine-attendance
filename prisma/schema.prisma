@@ -1,6 +1,6 @@
 generator client {
   provider   = "prisma-client-js"
-  engineType = "wasm"
+  engineType = "binary"
 }
 
 datasource db {
@@ -17,11 +17,6 @@ model announcements {
   content    String    @db.LongText
   created_at DateTime? @db.Timestamp(0)
   updated_at DateTime? @db.Timestamp(0)
-  companies  companies @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "announcements_company_id_foreign")
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "announcements_user_id_foreign")
-
-  @@index([company_id], map: "announcements_company_id_foreign")
-  @@index([user_id], map: "announcements_user_id_foreign")
 }
 
 model bug_reports {
@@ -35,57 +30,48 @@ model bug_reports {
   image      String               @db.VarChar(255)
   created_at DateTime?            @db.Timestamp(0)
   updated_at DateTime?            @db.Timestamp(0)
-  companies  companies            @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "bug_reports_company_id_foreign")
-  users      users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "bug_reports_user_id_foreign")
-
-  @@index([company_id], map: "bug_reports_company_id_foreign")
-  @@index([user_id], map: "bug_reports_user_id_foreign")
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model cache {
-  key        String @id @db.VarChar(255)
+  key        String @db.VarChar(255)
   value      String @db.MediumText
   expiration Int
+
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model cache_locks {
-  key        String @id @db.VarChar(255)
+  key        String @db.VarChar(255)
   owner      String @db.VarChar(255)
   expiration Int
+
+  @@ignore
 }
 
 model companies {
-  id            BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
-  name          String          @unique(map: "companies_name_unique") @db.VarChar(255)
-  latitude      String          @unique(map: "companies_latitude_unique") @db.VarChar(255)
-  longitude     String          @unique(map: "companies_longitude_unique") @db.VarChar(255)
-  radius        String          @unique(map: "companies_radius_unique") @db.VarChar(255)
-  full_address  String          @unique(map: "companies_full_address_unique") @db.VarChar(255)
-  created_at    DateTime?       @db.Timestamp(0)
-  updated_at    DateTime?       @db.Timestamp(0)
-  announcements announcements[]
-  bug_reports   bug_reports[]
-  departements  departements[]
-  job_levels    job_levels[]
-  job_positions job_positions[]
-  settings      settings[]
-  time_workes   time_workes[]
-  users         users[]
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name         String    @db.VarChar(255)
+  latitude     String    @db.VarChar(255)
+  longitude    String    @db.VarChar(255)
+  radius       String    @db.VarChar(255)
+  full_address String    @db.VarChar(255)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  deleted_at   DateTime? @db.Timestamp(0)
 }
 
 model departements {
-  id            BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
-  company_id    BigInt          @db.UnsignedBigInt
-  name          String          @db.VarChar(255)
-  created_at    DateTime?       @db.Timestamp(0)
-  updated_at    DateTime?       @db.Timestamp(0)
-  companies     companies       @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "departements_company_id_foreign")
-  job_levels    job_levels[]
-  job_positions job_positions[]
-  qr_presences  qr_presences[]
-  time_workes   time_workes[]
-
-  @@index([company_id], map: "departements_company_id_foreign")
+  id                                                        BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id                                                BigInt            @db.UnsignedBigInt
+  name                                                      String            @db.VarChar(255)
+  created_at                                                DateTime?         @db.Timestamp(0)
+  updated_at                                                DateTime?         @db.Timestamp(0)
+  deleted_at                                                DateTime?         @db.Timestamp(0)
+  design_requests                                           design_requests[]
+  work_orders_work_orders_department_idTodepartements       work_orders[]     @relation("work_orders_department_idTodepartements")
+  work_orders_work_orders_department_providesTodepartements work_orders[]     @relation("work_orders_department_providesTodepartements")
 }
 
 model exports {
@@ -100,26 +86,20 @@ model exports {
   user_id         BigInt    @db.UnsignedBigInt
   created_at      DateTime? @db.Timestamp(0)
   updated_at      DateTime? @db.Timestamp(0)
-  users           users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "exports_user_id_foreign")
-
-  @@index([user_id], map: "exports_user_id_foreign")
 }
 
 model failed_import_rows {
   id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  data             Json
+  data             String    @db.LongText
   import_id        BigInt    @db.UnsignedBigInt
   validation_error String?   @db.Text
   created_at       DateTime? @db.Timestamp(0)
   updated_at       DateTime? @db.Timestamp(0)
-  imports          imports   @relation(fields: [import_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "failed_import_rows_import_id_foreign")
-
-  @@index([import_id], map: "failed_import_rows_import_id_foreign")
 }
 
 model failed_jobs {
   id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  uuid       String   @db.VarChar(255)
   connection String   @db.Text
   queue      String   @db.Text
   payload    String   @db.LongText
@@ -133,31 +113,25 @@ model fcm_models {
   device_token String    @db.LongText
   created_at   DateTime? @db.Timestamp(0)
   updated_at   DateTime? @db.Timestamp(0)
-  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fcm_models_user_id_foreign")
-
-  @@index([user_id], map: "fcm_models_user_id_foreign")
 }
 
 model imports {
-  id                 BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
-  completed_at       DateTime?            @db.Timestamp(0)
-  file_name          String               @db.VarChar(255)
-  file_path          String               @db.VarChar(255)
-  importer           String               @db.VarChar(255)
-  processed_rows     Int                  @default(0) @db.UnsignedInt
-  total_rows         Int                  @db.UnsignedInt
-  successful_rows    Int                  @default(0) @db.UnsignedInt
-  user_id            BigInt               @db.UnsignedBigInt
-  created_at         DateTime?            @db.Timestamp(0)
-  updated_at         DateTime?            @db.Timestamp(0)
-  failed_import_rows failed_import_rows[]
-  users              users                @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "imports_user_id_foreign")
-
-  @@index([user_id], map: "imports_user_id_foreign")
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  completed_at    DateTime? @db.Timestamp(0)
+  file_name       String    @db.VarChar(255)
+  file_path       String    @db.VarChar(255)
+  importer        String    @db.VarChar(255)
+  processed_rows  Int       @default(0) @db.UnsignedInt
+  total_rows      Int       @db.UnsignedInt
+  successful_rows Int       @default(0) @db.UnsignedInt
+  user_id         BigInt    @db.UnsignedBigInt
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model job_batches {
-  id             String  @id @db.VarChar(255)
+  id             String  @db.VarChar(255)
   name           String  @db.VarChar(255)
   total_jobs     Int
   pending_jobs   Int
@@ -167,34 +141,28 @@ model job_batches {
   cancelled_at   Int?
   created_at     Int
   finished_at    Int?
+
+  @@ignore
 }
 
 model job_levels {
-  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
-  company_id     BigInt       @db.UnsignedBigInt
-  departement_id BigInt       @db.UnsignedBigInt
-  name           String       @db.VarChar(255)
-  created_at     DateTime?    @db.Timestamp(0)
-  updated_at     DateTime?    @db.Timestamp(0)
-  companies      companies    @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "job_levels_company_id_foreign")
-  departements   departements @relation(fields: [departement_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "job_levels_departement_id_foreign")
-
-  @@index([company_id], map: "job_levels_company_id_foreign")
-  @@index([departement_id], map: "job_levels_departement_id_foreign")
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id     BigInt    @db.UnsignedBigInt
+  departement_id BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  deleted_at     DateTime? @db.Timestamp(0)
 }
 
 model job_positions {
-  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
-  company_id     BigInt       @db.UnsignedBigInt
-  departement_id BigInt       @db.UnsignedBigInt
-  name           String       @db.VarChar(255)
-  created_at     DateTime?    @db.Timestamp(0)
-  updated_at     DateTime?    @db.Timestamp(0)
-  companies      companies    @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "job_positions_company_id_foreign")
-  departements   departements @relation(fields: [departement_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "job_positions_departement_id_foreign")
-
-  @@index([company_id], map: "job_positions_company_id_foreign")
-  @@index([departement_id], map: "job_positions_departement_id_foreign")
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id     BigInt    @db.UnsignedBigInt
+  departement_id BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  deleted_at     DateTime? @db.Timestamp(0)
 }
 
 model jobs {
@@ -205,8 +173,6 @@ model jobs {
   reserved_at  Int?   @db.UnsignedInt
   available_at Int    @db.UnsignedInt
   created_at   Int    @db.UnsignedInt
-
-  @@index([queue], map: "jobs_queue_index")
 }
 
 model migrations {
@@ -215,28 +181,27 @@ model migrations {
   batch     Int
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model model_has_permissions {
-  permission_id BigInt      @db.UnsignedBigInt
-  model_type    String      @db.VarChar(255)
-  model_id      BigInt      @db.UnsignedBigInt
-  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "model_has_permissions_permission_id_foreign")
+  permission_id BigInt @db.UnsignedBigInt
+  model_type    String @db.VarChar(255)
+  model_id      BigInt @db.UnsignedBigInt
 
-  @@id([permission_id, model_id, model_type])
-  @@index([model_id, model_type], map: "model_has_permissions_model_id_model_type_index")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model model_has_roles {
   role_id    BigInt @db.UnsignedBigInt
-  model_type String @db.VarChar(255)
+  model_type String @default("App\\Models\\User") @db.VarChar(255)
   model_id   BigInt @db.UnsignedBigInt
-  roles      roles  @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "model_has_roles_role_id_foreign")
 
-  @@id([role_id, model_id, model_type])
-  @@index([model_id, model_type], map: "model_has_roles_model_id_model_type_index")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model notifications {
-  id              String    @id @db.Char(36)
+  id              String    @db.Char(36)
   type            String    @db.VarChar(255)
   notifiable_type String    @db.VarChar(255)
   notifiable_id   BigInt    @db.UnsignedBigInt
@@ -245,83 +210,70 @@ model notifications {
   created_at      DateTime? @db.Timestamp(0)
   updated_at      DateTime? @db.Timestamp(0)
 
-  @@index([notifiable_type, notifiable_id], map: "notifications_notifiable_type_notifiable_id_index")
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model password_reset_tokens {
-  email      String    @id @db.VarChar(255)
+  email      String    @db.VarChar(255)
   token      String    @db.VarChar(255)
   created_at DateTime? @db.Timestamp(0)
+
+  @@ignore
 }
 
 model permissions {
-  id                    BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
-  name                  String                  @db.VarChar(255)
-  guard_name            String                  @db.VarChar(255)
-  created_at            DateTime?               @db.Timestamp(0)
-  updated_at            DateTime?               @db.Timestamp(0)
-  model_has_permissions model_has_permissions[]
-  role_has_permissions  role_has_permissions[]
-
-  @@unique([name, guard_name], map: "permissions_name_guard_name_unique")
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String    @db.VarChar(255)
+  guard_name String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
 }
 
 model permit_approves {
   id           BigInt                       @id @default(autoincrement()) @db.UnsignedBigInt
   permit_id    BigInt                       @db.UnsignedBigInt
   user_id      BigInt                       @db.UnsignedBigInt
-  user_type    permit_approves_user_type
+  user_type    String                       @db.VarChar(255)
   user_approve permit_approves_user_approve @default(w)
   notes        String?                      @db.LongText
   created_at   DateTime?                    @db.Timestamp(0)
   updated_at   DateTime?                    @db.Timestamp(0)
-  permits      permits                      @relation(fields: [permit_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permit_approves_permit_id_foreign")
-  users        users                        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permit_approves_user_id_foreign")
-
-  @@index([permit_id], map: "permit_approves_permit_id_foreign")
-  @@index([user_id], map: "permit_approves_user_id_foreign")
 }
 
 model permit_types {
   id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  type            String    @unique(map: "permit_types_type_unique") @db.VarChar(100)
+  type            String    @db.VarChar(100)
   is_payed        Boolean   @default(true)
   approve_line    Boolean   @default(true)
   approve_manager Boolean   @default(true)
   approve_hr      Boolean   @default(true)
-  with_file       Boolean   @default(true)
-  show_mobile     Boolean   @default(true)
+  with_file       Boolean   @default(false)
+  show_mobile     Boolean   @default(false)
   created_at      DateTime? @db.Timestamp(0)
   updated_at      DateTime? @db.Timestamp(0)
-  permits         permits[]
+  deleted_at      DateTime? @db.Timestamp(0)
 }
 
 model permits {
-  id                        BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
-  permit_numbers            String                  @unique(map: "permits_permit_numbers_unique") @db.VarChar(100)
-  user_id                   BigInt                  @db.UnsignedBigInt
-  permit_type_id            BigInt                  @db.UnsignedBigInt
-  user_timework_schedule_id BigInt                  @db.UnsignedBigInt
-  timein_adjust             DateTime?               @db.Time(0)
-  timeout_adjust            DateTime?               @db.Time(0)
-  current_shift_id          BigInt?                 @db.UnsignedBigInt
-  adjust_shift_id           BigInt?                 @db.UnsignedBigInt
-  start_date                DateTime?               @db.Date
-  end_date                  DateTime?               @db.Date
-  start_time                DateTime?               @db.Time(0)
-  end_time                  DateTime?               @db.Time(0)
-  notes                     String?                 @db.LongText
-  file                      String                  @db.VarChar(255)
-  created_at                DateTime?               @db.Timestamp(0)
-  updated_at                DateTime?               @db.Timestamp(0)
-  permit_approves           permit_approves[]
-  permit_types              permit_types            @relation(fields: [permit_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permits_permit_type_id_foreign")
-  users                     users                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permits_user_id_foreign")
-  user_timework_schedules   user_timework_schedules @relation(fields: [user_timework_schedule_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "permits_user_timework_schedule_id_foreign")
-
-  @@index([permit_type_id], map: "permits_permit_type_id_foreign")
-  @@index([user_id], map: "permits_user_id_foreign")
-  @@index([user_timework_schedule_id], map: "permits_user_timework_schedule_id_foreign")
+  id                        BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  permit_numbers            String    @db.VarChar(100)
+  user_id                   BigInt    @db.UnsignedBigInt
+  permit_type_id            BigInt    @db.UnsignedBigInt
+  user_timework_schedule_id BigInt    @db.UnsignedBigInt
+  timein_adjust             DateTime? @db.Time(0)
+  timeout_adjust            DateTime? @db.Time(0)
+  current_shift_id          BigInt?   @db.UnsignedBigInt
+  adjust_shift_id           BigInt?   @db.UnsignedBigInt
+  start_date                DateTime? @db.Date
+  end_date                  DateTime? @db.Date
+  start_time                DateTime? @db.Time(0)
+  end_time                  DateTime? @db.Time(0)
+  notes                     String?   @db.LongText
+  file                      String?   @db.VarChar(255)
+  created_at                DateTime? @db.Timestamp(0)
+  updated_at                DateTime? @db.Timestamp(0)
+  deleted_at                DateTime? @db.Timestamp(0)
 }
 
 model personal_access_tokens {
@@ -329,80 +281,61 @@ model personal_access_tokens {
   tokenable_type String    @db.VarChar(255)
   tokenable_id   BigInt    @db.UnsignedBigInt
   name           String    @db.VarChar(255)
-  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  token          String    @db.VarChar(64)
   abilities      String?   @db.Text
   last_used_at   DateTime? @db.Timestamp(0)
   expires_at     DateTime? @db.Timestamp(0)
   created_at     DateTime? @db.Timestamp(0)
   updated_at     DateTime? @db.Timestamp(0)
-
-  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
 }
 
 model qr_presence_transactions {
-  id                 BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
-  qr_presence_id     BigInt           @db.UnsignedBigInt
-  user_attendance_id BigInt           @db.UnsignedBigInt
-  token              String           @db.VarChar(255)
-  created_at         DateTime?        @db.Timestamp(0)
-  updated_at         DateTime?        @db.Timestamp(0)
-  qr_presences       qr_presences     @relation(fields: [qr_presence_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "qr_presence_transactions_qr_presence_id_foreign")
-  user_attendances   user_attendances @relation(fields: [user_attendance_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "qr_presence_transactions_user_attendance_id_foreign")
-
-  @@index([qr_presence_id], map: "qr_presence_transactions_qr_presence_id_foreign")
-  @@index([user_attendance_id], map: "qr_presence_transactions_user_attendance_id_foreign")
+  id                 BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  qr_presence_id     BigInt    @db.UnsignedBigInt
+  user_attendance_id BigInt    @db.UnsignedBigInt
+  token              String    @db.VarChar(255)
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
 }
 
 model qr_presences {
-  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
-  type                     qr_presences_type          @default(in)
-  departement_id           BigInt                     @db.UnsignedBigInt
-  timework_id              BigInt                     @db.UnsignedBigInt
-  token                    String                     @unique(map: "qr_presences_token_unique") @db.VarChar(255)
-  for_presence             DateTime?                     @db.DateTime(0)
-  expires_at               DateTime?                     @db.DateTime(0)
-  created_at               DateTime?                  @db.DateTime(3)
-  updated_at               DateTime?                  @db.DateTime(3)
-  qr_presence_transactions qr_presence_transactions[]
-  departements             departements               @relation(fields: [departement_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "qr_presences_departement_id_foreign")
-  time_workes              time_workes                @relation(fields: [timework_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "qr_presences_timework_id_foreign")
-
-  @@index([departement_id], map: "qr_presences_departement_id_foreign")
-  @@index([timework_id], map: "qr_presences_timework_id_foreign")
+  id             BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  type           qr_presences_type @default(in)
+  departement_id BigInt            @db.UnsignedBigInt
+  timework_id    BigInt            @db.UnsignedBigInt
+  token          String            @db.VarChar(255)
+  for_presence   DateTime          @default(now()) @db.DateTime(0)
+  expires_at     DateTime          @default(now()) @db.DateTime(0)
+  created_at     DateTime?         @db.Timestamp(0)
+  updated_at     DateTime?         @db.Timestamp(0)
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model role_has_permissions {
-  permission_id BigInt      @db.UnsignedBigInt
-  role_id       BigInt      @db.UnsignedBigInt
-  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_has_permissions_permission_id_foreign")
-  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_has_permissions_role_id_foreign")
+  permission_id BigInt @db.UnsignedBigInt
+  role_id       BigInt @db.UnsignedBigInt
 
-  @@id([permission_id, role_id])
-  @@index([role_id], map: "role_has_permissions_role_id_foreign")
+  @@ignore
 }
 
 model roles {
-  id                   BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
-  name                 String                 @db.VarChar(255)
-  guard_name           String                 @db.VarChar(255)
-  created_at           DateTime?              @db.Timestamp(0)
-  updated_at           DateTime?              @db.Timestamp(0)
-  model_has_roles      model_has_roles[]
-  role_has_permissions role_has_permissions[]
-
-  @@unique([name, guard_name], map: "roles_name_guard_name_unique")
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String    @db.VarChar(255)
+  guard_name String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model sessions {
-  id            String  @id @db.VarChar(255)
+  id            String  @db.VarChar(255)
   user_id       BigInt? @db.UnsignedBigInt
   ip_address    String? @db.VarChar(45)
   user_agent    String? @db.Text
   payload       String  @db.LongText
   last_activity Int
 
-  @@index([last_activity], map: "sessions_last_activity_index")
-  @@index([user_id], map: "sessions_user_id_index")
+  @@ignore
 }
 
 model settings {
@@ -413,43 +346,31 @@ model settings {
   attendance_fingerprint       Boolean   @default(false)
   created_at                   DateTime? @db.Timestamp(0)
   updated_at                   DateTime? @db.Timestamp(0)
-  companies                    companies @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "settings_company_id_foreign")
-
-  @@index([company_id], map: "settings_company_id_foreign")
+  deleted_at                   DateTime? @db.Timestamp(0)
 }
 
 model time_workes {
-  id                      BigInt                    @id @default(autoincrement()) @db.UnsignedBigInt
-  company_id              BigInt                    @db.UnsignedBigInt
-  departemen_id           BigInt                    @db.UnsignedBigInt
-  name                    String                    @db.VarChar(255)
-  in                      DateTime                  @db.Time(0)
-  out                     DateTime                  @db.Time(0)
-  created_at              DateTime?                 @db.Timestamp(0)
-  updated_at              DateTime?                 @db.Timestamp(0)
-  qr_presences            qr_presences[]
-  companies               companies                 @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "time_workes_company_id_foreign")
-  departements            departements              @relation(fields: [departemen_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "time_workes_departemen_id_foreign")
-  user_timework_schedules user_timework_schedules[]
-
-  @@index([company_id], map: "time_workes_company_id_foreign")
-  @@index([departemen_id], map: "time_workes_departemen_id_foreign")
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id    BigInt    @db.UnsignedBigInt
+  departemen_id BigInt    @db.UnsignedBigInt
+  name          String    @db.VarChar(255)
+  in            DateTime  @db.Time(0)
+  out           DateTime  @db.Time(0)
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
 }
 
 model user_address {
   id                  BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
   user_id             BigInt                     @db.UnsignedBigInt
   identity_type       user_address_identity_type @default(ktp)
-  identity_numbers    String                     @unique(map: "user_address_identity_numbers_unique") @db.VarChar(100)
+  identity_numbers    String                     @db.VarChar(100)
   province            String                     @db.VarChar(100)
   city                String                     @db.VarChar(100)
   citizen_address     String                     @db.LongText
   residential_address String                     @db.LongText
   created_at          DateTime?                  @db.Timestamp(0)
   updated_at          DateTime?                  @db.Timestamp(0)
-  users               users                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_address_user_id_foreign")
-
-  @@index([user_id], map: "user_address_user_id_foreign")
 }
 
 model user_attendances {
@@ -458,8 +379,8 @@ model user_attendances {
   user_timework_schedule_id BigInt?                     @db.UnsignedBigInt
   time_in                   DateTime?                   @db.Time(0)
   time_out                  DateTime?                   @db.Time(0)
-  type_in                   user_attendances_type_in?   @default(qrcode)
-  type_out                  user_attendances_type_out?  @default(qrcode)
+  type_in                   user_attendances_type_in?
+  type_out                  user_attendances_type_out?
   lat_in                    String?                     @db.VarChar(100)
   lat_out                   String?                     @db.VarChar(100)
   long_in                   String?                     @db.VarChar(100)
@@ -468,21 +389,17 @@ model user_attendances {
   image_out                 String?                     @db.VarChar(255)
   status_in                 user_attendances_status_in  @default(normal)
   status_out                user_attendances_status_out @default(normal)
+  date_presence             DateTime?                   @db.Date
   created_by                BigInt?                     @db.UnsignedBigInt
   updated_by                BigInt?                     @db.UnsignedBigInt
-  created_at                DateTime?                   @db.Timestamp(0)
+  created_at                DateTime?                   @db.DateTime(0)
   updated_at                DateTime?                   @db.Timestamp(0)
-  qr_presence_transactions  qr_presence_transactions[]
-  users                     users                       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_attendances_user_id_foreign")
-
-  @@index([user_id], map: "user_attendances_user_id_foreign")
-  @@index([user_timework_schedule_id], map: "user_attendances_user_timework_schedule_id_index")
 }
 
 model user_details {
   id             BigInt                       @id @default(autoincrement()) @db.UnsignedBigInt
   user_id        BigInt                       @db.UnsignedBigInt
-  phone          String                       @unique(map: "user_details_phone_unique") @db.VarChar(50)
+  phone          String                       @db.VarChar(50)
   placebirth     String                       @db.VarChar(100)
   datebirth      DateTime                     @db.Date
   gender         user_details_gender          @default(m)
@@ -491,9 +408,6 @@ model user_details {
   religion       user_details_religion?
   created_at     DateTime?                    @db.Timestamp(0)
   updated_at     DateTime?                    @db.Timestamp(0)
-  users          users                        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_details_user_id_foreign")
-
-  @@index([user_id], map: "user_details_user_id_foreign")
 }
 
 model user_employes {
@@ -513,14 +427,6 @@ model user_employes {
   saldo_cuti          Int?
   created_at          DateTime? @db.Timestamp(0)
   updated_at          DateTime? @db.Timestamp(0)
-  users               users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_employes_user_id_foreign")
-
-  @@index([approval_line_id], map: "user_employes_approval_line_id_index")
-  @@index([approval_manager_id], map: "user_employes_approval_manager_id_index")
-  @@index([departement_id], map: "user_employes_departement_id_index")
-  @@index([job_level_id], map: "user_employes_job_level_id_index")
-  @@index([job_position_id], map: "user_employes_job_position_id_index")
-  @@index([user_id], map: "user_employes_user_id_foreign")
 }
 
 model user_families {
@@ -533,9 +439,6 @@ model user_families {
   job            String                        @db.VarChar(100)
   created_at     DateTime?                     @db.Timestamp(0)
   updated_at     DateTime?                     @db.Timestamp(0)
-  users          users                         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_families_user_id_foreign")
-
-  @@index([user_id], map: "user_families_user_id_foreign")
 }
 
 model user_formal_educations {
@@ -543,16 +446,13 @@ model user_formal_educations {
   user_id       BigInt                        @db.UnsignedBigInt
   institution   String                        @db.VarChar(100)
   majors        String                        @db.VarChar(100)
-  score         Decimal                       @default(0.00) @db.Decimal(3, 2)
+  score         Decimal                       @default(0.00) @db.Decimal(4, 2)
   start         Int?                          @db.Year
   finish        Int?                          @db.Year
   status        user_formal_educations_status
   certification Boolean                       @default(true)
   created_at    DateTime?                     @db.Timestamp(0)
   updated_at    DateTime?                     @db.Timestamp(0)
-  users         users                         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_formal_educations_user_id_foreign")
-
-  @@index([user_id], map: "user_formal_educations_user_id_foreign")
 }
 
 model user_informal_educations {
@@ -567,9 +467,6 @@ model user_informal_educations {
   certification Boolean                         @default(true)
   created_at    DateTime?                       @db.Timestamp(0)
   updated_at    DateTime?                       @db.Timestamp(0)
-  users         users                           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_informal_educations_user_id_foreign")
-
-  @@index([user_id], map: "user_informal_educations_user_id_foreign")
 }
 
 model user_salaries {
@@ -579,25 +476,17 @@ model user_salaries {
   payment_type user_salaries_payment_type @default(Monthly)
   created_at   DateTime?                  @db.Timestamp(0)
   updated_at   DateTime?                  @db.Timestamp(0)
-  users        users                      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_salaries_user_id_foreign")
-
-  @@index([user_id], map: "user_salaries_user_id_foreign")
 }
 
 model user_timework_schedules {
-  id           BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
-  user_id      BigInt      @db.UnsignedBigInt
-  time_work_id BigInt      @db.UnsignedBigInt
-  work_day     DateTime    @db.Date
-  created_at   DateTime?   @db.Timestamp(0)
-  updated_at   DateTime?   @db.Timestamp(0)
-  permits      permits[]
-  time_workes  time_workes @relation(fields: [time_work_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_timework_schedules_time_work_id_foreign")
-  users        users       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_timework_schedules_user_id_foreign")
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id      BigInt    @db.UnsignedBigInt
+  time_work_id BigInt    @db.UnsignedBigInt
+  work_day     DateTime  @db.Date
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
 
-  @@unique([user_id, time_work_id, work_day])
-  @@index([time_work_id], map: "user_timework_schedules_time_work_id_foreign")
-  @@index([user_id], map: "user_timework_schedules_user_id_foreign")
+  @@unique([user_id, work_day], map: "uts_user_workday_unique")
 }
 
 model user_work_experiences {
@@ -610,46 +499,276 @@ model user_work_experiences {
   certification Boolean   @default(true)
   created_at    DateTime? @db.Timestamp(0)
   updated_at    DateTime? @db.Timestamp(0)
-  users         users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_work_experiences_user_id_foreign")
-
-  @@index([user_id], map: "user_work_experiences_user_id_foreign")
 }
 
 model users {
-  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
-  company_id               BigInt                     @db.UnsignedBigInt
-  name                     String                     @db.VarChar(255)
-  nip                      String                     @unique(map: "users_nip_unique") @db.VarChar(255)
-  email                    String                     @unique(map: "users_email_unique") @db.VarChar(255)
-  email_verified_at        DateTime?                  @db.Timestamp(0)
-  password                 String                     @db.VarChar(255)
-  avatar                   String?                    @db.VarChar(255)
-  status                   users_status               @default(active)
-  remember_token           String?                    @db.VarChar(100)
-  device_id                String?                    @db.VarChar(255)
-  created_at               DateTime?                  @db.Timestamp(0)
-  updated_at               DateTime?                  @db.Timestamp(0)
-  deleted_at               DateTime?                  @db.Timestamp(0) @map("deleted_at")
-  announcements            announcements[]
-  bug_reports              bug_reports[]
-  exports                  exports[]
-  fcm_models               fcm_models[]
-  imports                  imports[]
-  permit_approves          permit_approves[]
-  permits                  permits[]
-  user_address             user_address[]
-  user_attendances         user_attendances[]
-  user_details             user_details[]
-  user_employes            user_employes[]
-  user_families            user_families[]
-  user_formal_educations   user_formal_educations[]
-  user_informal_educations user_informal_educations[]
-  user_salaries            user_salaries[]
-  user_timework_schedules  user_timework_schedules[]
-  user_work_experiences    user_work_experiences[]
-  companies                companies                  @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "users_company_id_foreign")
+  id                                                        BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  company_id                                                BigInt                 @db.UnsignedBigInt
+  name                                                      String                 @db.VarChar(255)
+  nip                                                       String                 @db.VarChar(255)
+  email                                                     String                 @db.VarChar(255)
+  email_verified_at                                         DateTime?              @db.Timestamp(0)
+  password                                                  String                 @db.VarChar(255)
+  avatar                                                    String?                @db.VarChar(255)
+  status                                                    users_status           @default(active)
+  remember_token                                            String?                @db.VarChar(100)
+  device_id                                                 String?                @db.VarChar(255)
+  is_attendance                                             Boolean                @default(false)
+  created_at                                                DateTime?              @db.Timestamp(0)
+  updated_at                                                DateTime?              @db.Timestamp(0)
+  deleted_at                                                DateTime?              @map("deleted_at") @db.Timestamp(0)
+  activity_logs                                             activity_logs[]
+  attachments                                               attachments[]
+  design_approvals                                          design_approvals[]
+  design_requests_design_requests_acknowledged_by_idTousers design_requests[]      @relation("design_requests_acknowledged_by_idTousers")
+  design_requests_design_requests_pic_idTousers             design_requests[]      @relation("design_requests_pic_idTousers")
+  design_requests_design_requests_submitted_to_idTousers    design_requests[]      @relation("design_requests_submitted_to_idTousers")
+  log_user_attendances                                      log_user_attendances[]
+  status_histories                                          status_histories[]
+  wo_clearances                                             wo_clearances[]
+  wo_services                                               wo_services[]
+  wo_signoffs_wo_signoffs_done_by_idTousers                 wo_signoffs[]          @relation("wo_signoffs_done_by_idTousers")
+  wo_signoffs_wo_signoffs_head_maintenance_idTousers        wo_signoffs[]          @relation("wo_signoffs_head_maintenance_idTousers")
+  wo_signoffs_wo_signoffs_requester_verify_idTousers        wo_signoffs[]          @relation("wo_signoffs_requester_verify_idTousers")
+  work_orders                                               work_orders[]
+}
 
-  @@index([company_id], map: "users_company_id_foreign")
+model activity_logs {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt?   @db.UnsignedBigInt
+  method     String    @db.VarChar(10)
+  url        String    @db.LongText
+  action     String?   @db.VarChar(255)
+  model_type String?   @db.VarChar(255)
+  model_id   BigInt?   @db.UnsignedBigInt
+  payload    String?   @db.LongText
+  ip_address String?   @db.VarChar(45)
+  user_agent String?   @db.Text
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  deleted_at DateTime? @db.Timestamp(0)
+  users      users?    @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "activity_logs_user_id_foreign")
+
+  @@index([model_type, model_id], map: "activity_logs_model_type_model_id_index")
+  @@index([user_id], map: "activity_logs_user_id_foreign")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model attachments {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  owner_type     String    @db.VarChar(50)
+  owner_id       BigInt    @db.UnsignedBigInt
+  file_name      String?   @db.VarChar(255)
+  file_path      String?   @db.VarChar(500)
+  url            String?   @db.Text
+  meta           Json?
+  uploaded_by_id BigInt?   @db.UnsignedBigInt
+  uploaded_at    DateTime  @default(now()) @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  users          users?    @relation(fields: [uploaded_by_id], references: [id], onUpdate: NoAction, map: "attachments_uploaded_by_id_foreign")
+
+  @@index([owner_type, owner_id], map: "attachments_owner_idx")
+  @@index([uploaded_by_id], map: "attachments_uploaded_by_id_foreign")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model design_approvals {
+  id                BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  design_request_id BigInt                  @db.UnsignedBigInt
+  approver_id       BigInt?                 @db.UnsignedBigInt
+  status            design_approvals_status @default(PENDING)
+  decided_at        DateTime?               @db.Timestamp(0)
+  remarks           String?                 @db.Text
+  created_at        DateTime?               @db.Timestamp(0)
+  updated_at        DateTime?               @db.Timestamp(0)
+  users             users?                  @relation(fields: [approver_id], references: [id], onUpdate: NoAction, map: "design_approvals_approver_id_foreign")
+  design_requests   design_requests         @relation(fields: [design_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "design_approvals_design_request_id_foreign")
+
+  @@index([approver_id], map: "design_approvals_approver_id_foreign")
+  @@index([design_request_id, status], map: "design_approvals_status_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model design_request_items {
+  id                BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  design_request_id BigInt          @db.UnsignedBigInt
+  line_no           Int
+  kebutuhan         String          @db.Text
+  isi_konten        String?         @db.Text
+  ukuran            String?         @db.VarChar(100)
+  referensi         String?         @db.Text
+  keterangan        String?         @db.Text
+  created_at        DateTime?       @db.Timestamp(0)
+  updated_at        DateTime?       @db.Timestamp(0)
+  design_requests   design_requests @relation(fields: [design_request_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "design_request_items_design_request_id_foreign")
+
+  @@unique([design_request_id, line_no], map: "dri_unique_line")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model design_requests {
+  id                                              BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  request_no                                      String?                  @unique(map: "design_requests_request_no_unique") @db.VarChar(50)
+  request_date                                    DateTime                 @db.Date
+  need_by_date                                    DateTime?                @db.Date
+  priority                                        design_requests_priority
+  pic_id                                          BigInt                   @db.UnsignedBigInt
+  division_id                                     BigInt?                  @db.UnsignedBigInt
+  submitted_to_id                                 BigInt?                  @db.UnsignedBigInt
+  acknowledged_by_id                              BigInt?                  @db.UnsignedBigInt
+  status                                          design_requests_status   @default(DRAFT)
+  notes                                           String?                  @db.Text
+  created_at                                      DateTime?                @db.Timestamp(0)
+  updated_at                                      DateTime?                @db.Timestamp(0)
+  design_approvals                                design_approvals[]
+  design_request_items                            design_request_items[]
+  users_design_requests_acknowledged_by_idTousers users?                   @relation("design_requests_acknowledged_by_idTousers", fields: [acknowledged_by_id], references: [id], onUpdate: NoAction, map: "design_requests_acknowledged_by_id_foreign")
+  departements                                    departements?            @relation(fields: [division_id], references: [id], onUpdate: NoAction, map: "design_requests_division_id_foreign")
+  users_design_requests_pic_idTousers             users                    @relation("design_requests_pic_idTousers", fields: [pic_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "design_requests_pic_id_foreign")
+  users_design_requests_submitted_to_idTousers    users?                   @relation("design_requests_submitted_to_idTousers", fields: [submitted_to_id], references: [id], onUpdate: NoAction, map: "design_requests_submitted_to_id_foreign")
+
+  @@index([acknowledged_by_id], map: "design_requests_acknowledged_by_id_foreign")
+  @@index([division_id], map: "design_requests_division_id_foreign")
+  @@index([pic_id], map: "design_requests_pic_id_foreign")
+  @@index([submitted_to_id], map: "design_requests_submitted_to_id_foreign")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model documentations {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  title      String    @db.VarChar(255)
+  subtitle   String?   @db.VarChar(255)
+  text_docs  String    @db.LongText
+  status     Boolean   @default(true)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model log_user_attendances {
+  id         BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt?                    @db.UnsignedBigInt
+  type       log_user_attendances_type? @default(in)
+  created_at DateTime?                  @db.Timestamp(0)
+  updated_at DateTime?                  @db.Timestamp(0)
+  users      users?                     @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "log_user_attendances_user_id_foreign")
+
+  @@index([user_id], map: "log_user_attendances_user_id_foreign")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model status_histories {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  owner_type    String    @db.VarChar(50)
+  owner_id      BigInt    @db.UnsignedBigInt
+  from_status   String?   @db.VarChar(30)
+  to_status     String    @db.VarChar(30)
+  changed_by_id BigInt?   @db.UnsignedBigInt
+  changed_at    DateTime  @default(now()) @db.Timestamp(0)
+  remarks       String?   @db.Text
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+  users         users?    @relation(fields: [changed_by_id], references: [id], onUpdate: NoAction, map: "status_histories_changed_by_id_foreign")
+
+  @@index([changed_by_id], map: "status_histories_changed_by_id_foreign")
+  @@index([owner_type, owner_id, changed_at], map: "status_histories_owner_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model wo_clearances {
+  id                    BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  work_order_id         BigInt      @db.UnsignedBigInt
+  hygiene_clearance     Boolean?
+  maintenance_clearance Boolean?
+  verified_by_id        BigInt?     @db.UnsignedBigInt
+  verified_at           DateTime?   @db.Timestamp(0)
+  created_at            DateTime?   @db.Timestamp(0)
+  updated_at            DateTime?   @db.Timestamp(0)
+  users                 users?      @relation(fields: [verified_by_id], references: [id], onUpdate: NoAction, map: "wo_clearances_verified_by_id_foreign")
+  work_orders           work_orders @relation(fields: [work_order_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "wo_clearances_work_order_id_foreign")
+
+  @@index([verified_by_id], map: "wo_clearances_verified_by_id_foreign")
+  @@index([work_order_id], map: "wo_clearances_work_order_id_foreign")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model wo_services {
+  id            BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  work_order_id BigInt      @db.UnsignedBigInt
+  description   String      @db.Text
+  created_by_id BigInt?     @db.UnsignedBigInt
+  created_at    DateTime    @default(now()) @db.Timestamp(0)
+  users         users?      @relation(fields: [created_by_id], references: [id], onUpdate: NoAction, map: "wo_services_created_by_id_foreign")
+  work_orders   work_orders @relation(fields: [work_order_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "wo_services_work_order_id_foreign")
+
+  @@index([created_by_id], map: "wo_services_created_by_id_foreign")
+  @@index([work_order_id], map: "wo_services_work_order_id_foreign")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model wo_signoffs {
+  id                                           BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  work_order_id                                BigInt      @db.UnsignedBigInt
+  done_by_id                                   BigInt?     @db.UnsignedBigInt
+  head_maintenance_id                          BigInt?     @db.UnsignedBigInt
+  requester_verify_id                          BigInt?     @db.UnsignedBigInt
+  notes                                        String?     @db.Text
+  signed_at                                    DateTime?   @db.Timestamp(0)
+  created_at                                   DateTime?   @db.Timestamp(0)
+  updated_at                                   DateTime?   @db.Timestamp(0)
+  users_wo_signoffs_done_by_idTousers          users?      @relation("wo_signoffs_done_by_idTousers", fields: [done_by_id], references: [id], onUpdate: NoAction, map: "wo_signoffs_done_by_id_foreign")
+  users_wo_signoffs_head_maintenance_idTousers users?      @relation("wo_signoffs_head_maintenance_idTousers", fields: [head_maintenance_id], references: [id], onUpdate: NoAction, map: "wo_signoffs_head_maintenance_id_foreign")
+  users_wo_signoffs_requester_verify_idTousers users?      @relation("wo_signoffs_requester_verify_idTousers", fields: [requester_verify_id], references: [id], onUpdate: NoAction, map: "wo_signoffs_requester_verify_id_foreign")
+  work_orders                                  work_orders @relation(fields: [work_order_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "wo_signoffs_work_order_id_foreign")
+
+  @@index([done_by_id], map: "wo_signoffs_done_by_id_foreign")
+  @@index([head_maintenance_id], map: "wo_signoffs_head_maintenance_id_foreign")
+  @@index([requester_verify_id], map: "wo_signoffs_requester_verify_id_foreign")
+  @@index([work_order_id], map: "wo_signoffs_work_order_id_foreign")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model wo_spareparts {
+  id            BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  work_order_id BigInt      @db.UnsignedBigInt
+  part_name     String      @db.VarChar(150)
+  quantity      Decimal     @default(1.00) @db.Decimal(12, 2)
+  remarks       String?     @db.Text
+  created_at    DateTime?   @db.Timestamp(0)
+  updated_at    DateTime?   @db.Timestamp(0)
+  work_orders   work_orders @relation(fields: [work_order_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "wo_spareparts_work_order_id_foreign")
+
+  @@index([work_order_id, part_name], map: "wo_spareparts_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model work_orders {
+  id                                                         BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  wo_no                                                      String?            @unique(map: "work_orders_wo_no_unique") @db.VarChar(50)
+  requested_by_id                                            BigInt             @db.UnsignedBigInt
+  request_date                                               DateTime           @db.Date
+  department_provides                                        BigInt?            @db.UnsignedBigInt
+  department_id                                              BigInt?            @db.UnsignedBigInt
+  area                                                       String?            @db.VarChar(150)
+  complaint                                                  String?            @db.Text
+  asset_info                                                 String?            @db.VarChar(255)
+  status                                                     work_orders_status @default(OPEN)
+  start_time                                                 DateTime?          @db.Timestamp(0)
+  end_time                                                   DateTime?          @db.Timestamp(0)
+  created_at                                                 DateTime?          @db.Timestamp(0)
+  updated_at                                                 DateTime?          @db.Timestamp(0)
+  wo_clearances                                              wo_clearances[]
+  wo_services                                                wo_services[]
+  wo_signoffs                                                wo_signoffs[]
+  wo_spareparts                                              wo_spareparts[]
+  departements_work_orders_department_idTodepartements       departements?      @relation("work_orders_department_idTodepartements", fields: [department_id], references: [id], onUpdate: NoAction, map: "work_orders_department_id_foreign")
+  departements_work_orders_department_providesTodepartements departements?      @relation("work_orders_department_providesTodepartements", fields: [department_provides], references: [id], onUpdate: NoAction, map: "work_orders_department_provides_foreign")
+  users                                                      users              @relation(fields: [requested_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "work_orders_requested_by_id_foreign")
+
+  @@index([department_id], map: "work_orders_department_id_foreign")
+  @@index([department_provides], map: "work_orders_department_provides_foreign")
+  @@index([requested_by_id], map: "work_orders_requested_by_id_foreign")
+  @@index([status, request_date], map: "work_orders_status_date_idx")
 }
 
 enum qr_presences_type {
@@ -661,13 +780,6 @@ enum user_address_identity_type {
   ktp
   sim
   passport
-}
-
-enum permit_approves_user_type {
-  line
-  manager
-  hrga
-  EMPTY_ENUM_VALUE @map("")
 }
 
 enum user_families_relationship {
@@ -779,4 +891,39 @@ enum user_attendances_status_out {
   late
   unlate
   normal
+}
+
+enum log_user_attendances_type {
+  in
+  out
+}
+
+enum design_approvals_status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum design_requests_priority {
+  high
+  medium
+  low
+}
+
+enum design_requests_status {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  DONE
+  CANCELED
+}
+
+enum work_orders_status {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  DONE
+  CANCELED
 }
