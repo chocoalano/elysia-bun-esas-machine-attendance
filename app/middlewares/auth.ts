@@ -36,15 +36,7 @@ export const auth = (app: Elysia) =>
           id: Number(payload.id),
         },
         include: {
-          user_address: true,
-          user_details: true,
-          user_employes: true,
-          user_families: true,
-          user_formal_educations: true,
-          user_informal_educations: true,
-          user_salaries: true,
-          user_work_experiences: true,
-          companies: true,
+          user_employe: true
         },
       });
 

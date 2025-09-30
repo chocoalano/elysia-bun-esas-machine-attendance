@@ -6,7 +6,7 @@ type CompanyInput = typeof Companies.static;
 export const CompanyModel = {
     all: () => prisma.companies.findMany(),
 
-    findbynip: (name: string) => prisma.companies.findUnique({
+    findbynip: (name: string) => prisma.companies.findFirst({
         where: {
             name
         }

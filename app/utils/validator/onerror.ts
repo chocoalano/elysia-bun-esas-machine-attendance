@@ -29,6 +29,22 @@ export const onErrorHandler = ({ code, error, set, request }: any) => {
     )
   }
 
+  if (code === 'P2010' && error?.message) {
+    const customError = extractDbCustomError(error.message)
+    
+    if (customError) {
+      // Menggunakan status 409 Conflict, yang cocok untuk batasan bisnis (sudah absen, dll.)
+      set.status = 409 
+      const isProd = process.env.NODE_ENV === 'production'
+      return response(
+        false,
+        customError.dbMessage, // Pesan yang jelas dari database: "Aturan absensi: sudah absen masuk hari ini"
+        isProd ? {} : { dbCode: customError.dbCode, originalCode: code },
+        409
+      )
+    }
+  }
+
   // 500 — error tak terduga / fallback
   set.status = 500
   const isProd = process.env.NODE_ENV === 'production'
@@ -44,4 +60,15 @@ export const onErrorHandler = ({ code, error, set, request }: any) => {
         },
     500
   )
+}
+
+const extractDbCustomError = (message: string) => {
+  const match = message.match(/Raw query failed\. Code: `(\d+)`\. Message: `([^`]+)`/)
+  if (match && match[1] && match[2]) {
+    return {
+      dbCode: match[1],
+      dbMessage: match[2],
+    }
+  }
+  return null
 }
